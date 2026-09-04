@@ -1,0 +1,68 @@
+{% extends "base/base.html" %}
+{% block title %}Profile Improvement Advisor{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: same three fixes as strategy_planner.html -- the shared
+   "AI unavailable" note, outcome chips instead of two locally-worded
+   badges, and .ai-prose in place of an inline white-space style. The empty
+   state now names the action instead of only stating the absence. {% endcomment %}
+<h1 class="h3 page-title mb-1">Profile Improvement Advisor</h1>
+<p class="page-subtitle mb-4">
+    See which profile improvements would help across the most
+    scholarships — the affected-scholarship counts are computed
+    deterministically; Gemini only explains and prioritizes them.
+</p>
+
+{% if not gemini_enabled %}
+    {% include "ai_advisor/_ai_unavailable_note.html" with fallback_note="You'll still get a plain, deterministically-computed list below." %}
+{% endif %}
+
+{% if profile_missing %}
+{% comment %} `profile_missing` means the StudentProfile row is absent, not merely
+   incomplete, and accounts:student_profile redirects such users straight back
+   to the dashboard (apps/accounts/views.py:162) -- so "complete your profile"
+   pointed nowhere. Same wording as recommendations/my_recommendations.html. {% endcomment %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your student profile could not be found, so improvement suggestions
+        cannot be generated. Please contact support.
+    </span>
+</div>
+{% else %}
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>
+        {% if interaction %}Refresh Suggestions{% else %}How Can I Improve My Chances?{% endif %}
+    </button>
+</form>
+
+{% if interaction %}
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <h2 class="h6 mb-0">Suggested Improvements</h2>
+            {% include "ai_advisor/_outcome_chip.html" with interaction=interaction %}
+        </div>
+        <p class="ai-prose">{{ interaction.ai_response_text }}</p>
+        <p class="text-muted small mb-0">Generated {{ interaction.created_at|date:"M d, Y H:i" }}</p>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-graph-up-arrow empty-icon" aria-hidden="true"></i>
+        <p class="empty-note mb-0">
+            You haven't requested suggestions yet. Use the button above to see
+            which improvements would open up the most scholarships for you.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<p class="text-muted small mt-4">
+    This tells you what to improve — it never guarantees that any change
+    will result in acceptance to a scholarship.
+</p>
+{% endblock %}

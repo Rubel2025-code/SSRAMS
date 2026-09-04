@@ -1,0 +1,129 @@
+{% extends "base/base.html" %}
+{% block title %}{{ scholarship.title }}{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9 — this page had its own copy of the status badge chain, and its
+   copy had already drifted: it said "Draft — not published" where
+   provider_list and admin_list said "Draft". All three now include
+   scholarships/_visibility_chip.html, so there is one wording. {% endcomment %}
+<nav aria-label="Breadcrumb" class="mb-2">
+    <a href="{% url 'scholarships:list' %}" class="small">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to my scholarships
+    </a>
+</nav>
+
+<div class="page-header align-items-start">
+    <div>
+        <h1 class="h3 page-title mb-2">{{ scholarship.title }}</h1>
+        <div class="d-flex flex-wrap gap-1">
+            {% include "scholarships/_visibility_chip.html" with scholarship=scholarship %}
+        </div>
+    </div>
+    {# One labelled group: three ways to edit the same scholarship. #}
+    <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Edit this scholarship">
+        <a href="{% url 'scholarships:provider_edit' scholarship.pk %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit Details
+        </a>
+        <a href="{% url 'scholarships:provider_criteria' scholarship.pk %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-sliders me-1" aria-hidden="true"></i>Manage Criteria
+        </a>
+        <a href="{% url 'scholarships:provider_weights' scholarship.pk %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-percent me-1" aria-hidden="true"></i>Manage Weights
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h6">Details</h2>
+                <dl class="facts-list row mb-0">
+                    <dt class="col-sm-4">Amount</dt>
+                    <dd class="col-sm-8 stat-value">৳ {{ scholarship.amount }}</dd>
+                    <dt class="col-sm-4">Deadline</dt>
+                    <dd class="col-sm-8">{{ scholarship.deadline|date:"M d, Y H:i" }}</dd>
+                    <dt class="col-sm-4">Description</dt>
+                    <dd class="col-sm-8">{{ scholarship.description|linebreaksbr }}</dd>
+                    <dt class="col-sm-4">Required Documents</dt>
+                    <dd class="col-sm-8">
+                        {% if scholarship.required_documents %}
+                        <ul class="list-inline mb-0">
+                            {% for doc in scholarship.required_documents %}
+                                <li class="list-inline-item"><span class="chip chip-neutral">{{ doc }}</span></li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}—{% endif %}
+                    </dd>
+                    <dt class="col-sm-4">Application Instructions</dt>
+                    <dd class="col-sm-8 mb-0">{{ scholarship.application_instructions|default:"—"|linebreaksbr }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Weighting Configuration</h2>
+                {% include "scholarships/_weight_summary.html" %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Actions</h2>
+
+                {% if scholarship.is_published %}
+                <form method="post" action="{% url 'scholarships:provider_unpublish' scholarship.pk %}" class="mb-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-warning w-100">
+                        <i class="bi bi-eye-slash me-1" aria-hidden="true"></i>Unpublish
+                    </button>
+                </form>
+                {% else %}
+                {% comment %} The button stays `disabled` -- the weight total is a real
+                   precondition, and the server enforces it too. A disabled
+                   control is not focusable, so the reason cannot be attached
+                   to it with aria-describedby; it is spelled out in visible
+                   text immediately below instead, with an icon so it is not
+                   just quiet grey prose. {% endcomment %}
+                <form method="post" action="{% url 'scholarships:provider_publish' scholarship.pk %}" class="mb-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success w-100" {% if not validation.is_valid %}disabled{% endif %}>
+                        <i class="bi bi-send me-1" aria-hidden="true"></i>Publish
+                    </button>
+                </form>
+                {% if not validation.is_valid %}
+                <p class="small d-flex align-items-start gap-2">
+                    <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+                    <span>Publishing is disabled until the weighting configuration totals exactly 100%.</span>
+                </p>
+                {% endif %}
+                {% endif %}
+
+                <form method="post" action="{% url 'scholarships:provider_deactivate' scholarship.pk %}" class="mb-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary w-100">
+                        {% if scholarship.is_active %}
+                            <i class="bi bi-pause-circle me-1" aria-hidden="true"></i>Deactivate
+                        {% else %}
+                            <i class="bi bi-play-circle me-1" aria-hidden="true"></i>Reactivate
+                        {% endif %}
+                    </button>
+                </form>
+
+                {% if not scholarship.is_published %}
+                <a href="{% url 'scholarships:provider_delete' scholarship.pk %}" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete Draft
+                </a>
+                {% else %}
+                <p class="text-muted small mb-0">
+                    Published scholarships can't be deleted — unpublish or
+                    deactivate instead.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

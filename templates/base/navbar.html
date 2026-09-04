@@ -1,0 +1,148 @@
+{% comment %}
+Primary navigation. Links are role-gated by the nav_is_* flags that
+apps/common/context_processors.role_context puts in every context -- the
+template never inspects user.role directly, and hiding a link is never
+the access control (that lives in apps/common/rbac.py).
+
+PROMPT 9 (UI/UX) NOTES:
+  - The collapse toggler had no aria-controls / aria-expanded / label, so
+    on mobile a screen reader announced an unlabelled button with no
+    indication of what it opened or whether it was open. All three added.
+  - aria-current="page" marks the active link, and base.css gives it an
+    underline as well as a color change so the cue is not color-only.
+  - The hardcoded style="background-color:#1a3d5c" is now the
+    .ssrams-navbar class, so the navbar follows the theme tokens (it was
+    previously stuck light-navy even in dark mode).
+  - Every icon here is decorative -- each one sits beside its own text
+    label -- so all are aria-hidden to stop double announcements. There
+    are no icon-only controls in this navbar.
+{% endcomment %}
+{% with current_view=request.resolver_match.view_name %}
+<nav class="navbar navbar-expand-lg navbar-dark ssrams-navbar" aria-label="Main navigation">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'dashboard:home' %}">
+            <i class="bi bi-mortarboard-fill me-1" aria-hidden="true"></i>{{ site_name }}
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navMain" aria-controls="navMain"
+                aria-expanded="false" aria-label="Toggle navigation menu">
+            <span class="navbar-toggler-icon" aria-hidden="true"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMain">
+            {% if user.is_authenticated %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard:home' %}"
+                       {% if current_view == 'dashboard:home' %}aria-current="page"{% endif %}>Dashboard</a>
+                </li>
+
+                {% if nav_is_student %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'accounts:student_profile' %}"
+                       {% if current_view == 'accounts:student_profile' %}aria-current="page"{% endif %}>My Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'scholarships:list' %}"
+                       {% if current_view == 'scholarships:list' %}aria-current="page"{% endif %}>Scholarships</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'recommendations:my_recommendations' %}"
+                       {% if current_view == 'recommendations:my_recommendations' %}aria-current="page"{% endif %}>My Recommendations</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'recommendations:top_opportunities' %}"
+                       {% if current_view == 'recommendations:top_opportunities' %}aria-current="page"{% endif %}>Top Opportunities</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'applications:my_applications' %}"
+                       {% if current_view == 'applications:my_applications' %}aria-current="page"{% endif %}>My Applications</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'applications:my_bookmarks' %}"
+                       {% if current_view == 'applications:my_bookmarks' %}aria-current="page"{% endif %}>My Bookmarks</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'ai_advisor:advisor' %}"
+                       {% if current_view == 'ai_advisor:advisor' %}aria-current="page"{% endif %}>AI Advisor</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'ai_advisor:strategy_planner' %}"
+                       {% if current_view == 'ai_advisor:strategy_planner' %}aria-current="page"{% endif %}>Strategy Planner</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'ai_advisor:profile_improvement' %}"
+                       {% if current_view == 'ai_advisor:profile_improvement' %}aria-current="page"{% endif %}>Improve My Profile</a>
+                </li>
+                {% endif %}
+
+                {% if nav_is_provider %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'accounts:provider_profile' %}"
+                       {% if current_view == 'accounts:provider_profile' %}aria-current="page"{% endif %}>My Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'scholarships:list' %}"
+                       {% if current_view == 'scholarships:list' %}aria-current="page"{% endif %}>My Scholarships</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'applications:provider_list' %}"
+                       {% if current_view == 'applications:provider_list' %}aria-current="page"{% endif %}>Applications</a>
+                </li>
+                {% endif %}
+
+                {% if nav_is_admin_role %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'accounts:admin_verification_list' %}"
+                       {% if current_view == 'accounts:admin_verification_list' %}aria-current="page"{% endif %}>Provider Verification</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'admin:index' %}">Django Admin</a>
+                </li>
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav align-items-lg-center">
+                <li class="nav-item">
+                    <span class="nav-link disabled">
+                        <i class="bi bi-person-circle me-1" aria-hidden="true"></i>{{ user.get_full_name|default:user.username }}
+                        <span class="badge text-bg-light text-dark ms-1">{{ user.get_role_display }}</span>
+                    </span>
+                </li>
+                <li class="nav-item">
+                    {% comment %} Hidden until the toggle script runs, so a no-JS visitor is
+                       not offered a control that cannot work. Without JS the
+                       page still follows the OS prefers-color-scheme setting. {% endcomment %}
+                    <button type="button" id="themeToggle" hidden
+                            class="nav-link btn border-0 bg-transparent"
+                            aria-pressed="false">
+                        <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+                        <span class="theme-label visually-hidden">Switch to dark theme</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    {% comment %} Logout is a state-changing operation, so it is a
+                       CSRF-protected POST rather than a link (a GET logout
+                       can be triggered by any third-party page). {% endcomment %}
+                    <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-link border-0 bg-transparent">
+                            <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+            {% else %}
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'accounts:login' %}"
+                       {% if current_view == 'accounts:login' %}aria-current="page"{% endif %}>Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'accounts:register_choice' %}"
+                       {% if current_view == 'accounts:register_choice' %}aria-current="page"{% endif %}>Register</a>
+                </li>
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+{% endwith %}

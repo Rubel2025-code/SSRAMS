@@ -1,0 +1,83 @@
+{% extends "base/base.html" %}
+{% block title %}My Recommendations{% endblock %}
+{% block content %}
+<h1 class="h3 page-title mb-3">My Recommendations</h1>
+
+{% if profile_missing %}
+{% comment %} `profile_missing` means the StudentProfile row does not exist at all --
+   not that it is incomplete. accounts:student_profile redirects straight
+   back to the dashboard in that case (apps/accounts/views.py:162), so
+   linking there would be a loop. This wording matches
+   dashboard/student_dashboard.html for the same condition. {% endcomment %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your student profile could not be found, so recommendations cannot
+        be calculated. Please contact support.
+    </span>
+</div>
+{% elif not rows %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-clipboard-x empty-icon" aria-hidden="true"></i>
+        <h2 class="h5 empty-title">Nothing to score yet</h2>
+        <p class="empty-note">
+            No currently published, active scholarships with a valid weight
+            configuration are available to score against your profile right now.
+        </p>
+        <a href="{% url 'scholarships:list' %}" class="btn btn-sm btn-outline-primary">Browse scholarships</a>
+    </div>
+</div>
+{% else %}
+{% comment %} PROMPT 9: scope="col" added, deadline column now says "Passed"/"Today"
+   with an icon rather than relying on red text alone, and the two percent
+   columns are right-aligned with tabular figures so they can be compared
+   down the column. {% endcomment %}
+<div class="table-card">
+    <div class="table-responsive" tabindex="0" role="region" aria-label="My scholarship recommendations">
+        <table class="table align-middle">
+            <caption class="visually-hidden">
+                Scholarships scored against your profile, with match score, readiness, and time left to apply.
+            </caption>
+            <thead>
+                <tr>
+                    <th scope="col">Scholarship</th>
+                    <th scope="col" class="text-end">Match Score</th>
+                    <th scope="col" class="text-end">Readiness</th>
+                    <th scope="col">Deadline</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in rows %}
+                <tr>
+                    <th scope="row" class="fw-normal">{{ row.recommendation.scholarship.title }}</th>
+                    <td class="text-end stat-value">{{ row.recommendation.match_score_percent }}%</td>
+                    <td class="text-end">{{ row.readiness.readiness_percent }}%</td>
+                    <td class="text-nowrap">
+                        {% if row.days_remaining < 0 %}
+                            <span class="chip chip-neutral"><i class="bi bi-slash-circle" aria-hidden="true"></i>Passed</span>
+                        {% elif row.days_remaining == 0 %}
+                            <span class="chip chip-danger"><i class="bi bi-alarm-fill" aria-hidden="true"></i>Today</span>
+                        {% else %}
+                            {{ row.days_remaining }} day{{ row.days_remaining|pluralize }}
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'recommendations:detail' row.recommendation.scholarship.pk %}" class="btn btn-sm btn-outline-primary">
+                            View Details<span class="visually-hidden"> for {{ row.recommendation.scholarship.title }}</span>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<p class="text-muted small mt-4">
+    <a href="{% url 'recommendations:top_opportunities' %}">See your Top Opportunities</a>
+    for a ranked, prioritized view.
+</p>
+{% endblock %}

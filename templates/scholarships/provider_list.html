@@ -1,0 +1,94 @@
+{% extends "base/base.html" %}
+{% block title %}My Scholarships{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9 — the status and weight columns each carried their own inline
+   badge chain here; both now come from shared partials so provider_list,
+   admin_list, and provider_detail cannot drift apart again.
+
+   CAUTION: a test logs in as a provider, hits scholarships:list (which
+   routes here, not to the student catalog), and asserts the page contains
+   "Still Draft" and "Deactivated". Both are *scholarship titles* in that
+   fixture, so the title column satisfies them on its own -- but do not
+   remove or truncate the title column. {% endcomment %}
+<div class="page-header">
+    <h1 class="h3 page-title mb-0">My Scholarships</h1>
+    {% if profile.verification_status == "approved" %}
+    <a href="{% url 'scholarships:provider_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>New Scholarship
+    </a>
+    {% endif %}
+</div>
+
+{% if profile.verification_status != "approved" %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your provider account must be admin-verified before you can create or
+        manage scholarships (FR-03). Current status:
+        <strong>{{ profile.get_verification_status_display|default:"Unknown" }}</strong>.
+    </span>
+</div>
+{% endif %}
+
+{% if scholarships %}
+<div class="table-card">
+    <div class="table-responsive" tabindex="0" role="region" aria-label="My scholarships">
+        <table class="table align-middle mb-0">
+            <caption class="visually-hidden">
+                Every scholarship you have created, including drafts and
+                deactivated ones, with its publication status and whether its
+                criterion weights total 100%.
+            </caption>
+            <thead>
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Deadline</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Weights</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for scholarship in scholarships %}
+                <tr>
+                    <th scope="row" class="fw-normal">{{ scholarship.title }}</th>
+                    <td>৳ {{ scholarship.amount }}</td>
+                    <td>{{ scholarship.deadline|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% include "scholarships/_visibility_chip.html" with scholarship=scholarship %}
+                        </div>
+                    </td>
+                    <td>
+                        {% include "scholarships/_weight_validity_chip.html" with is_valid=scholarship.weights_are_valid total=scholarship.total_weight_percent %}
+                    </td>
+                    <td>
+                        <a href="{% url 'scholarships:provider_detail' scholarship.pk %}" class="btn btn-sm btn-outline-primary">
+                            Manage<span class="visually-hidden"> {{ scholarship.title }}</span>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-mortarboard empty-icon" aria-hidden="true"></i>
+        <h2 class="h5 empty-title">No scholarships yet</h2>
+        <p class="empty-note">
+            Scholarships you create will appear here as drafts until you
+            publish them.
+        </p>
+        {% if profile.verification_status == "approved" %}
+        <a href="{% url 'scholarships:provider_create' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Create your first scholarship
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,72 @@
+{% comment %}
+Renders every visible field of `form` with Bootstrap 5 markup plus errors,
+so that no template has to duplicate the field-loop markup. Included by
+eight forms across two apps: accounts/login, accounts/register_student,
+accounts/register_provider, accounts/student_profile_form,
+accounts/provider_profile_form, scholarships/provider_form,
+scholarships/provider_criteria and scholarships/provider_criterion_edit.
+It lives under accounts/ for historical reasons only -- it is app-neutral,
+and the path is referenced by all eight includes, so it stays put.
+
+PROMPT 9 (UI/UX) NOTES — this partial had a dangling-reference bug:
+
+Django 5.2 already renders each widget with
+    aria-invalid="true"
+    aria-describedby="<auto_id>_helptext <auto_id>_error"
+but this template emitted the help text and the errors with *no id at
+all*, so every one of those references pointed at nothing. A screen
+reader therefore announced neither the help text nor the validation
+error. The ids below are not decorative -- they must stay exactly
+`{{ field.auto_id }}_helptext` and `{{ field.auto_id }}_error`, because
+Django generates the aria-describedby value from that pattern.
+
+Because Django supplies aria-invalid itself, the invalid styling is
+driven from CSS ([aria-invalid="true"] in base.css) rather than by
+injecting Bootstrap's .is-invalid class here -- that would need widget
+attrs set in forms.py, and the visual result is identical.
+
+Radio/checkbox groups need a fieldset+legend rather than a single label,
+since one <label> cannot describe a group of inputs. Django exposes
+`field.use_fieldset` to say which fields those are.
+
+`{% for field in form %}` yields hidden fields too, so hidden inputs are
+emitted bare. Wrapping one in a .mb-3 with an empty <label> would add a
+visible label and a blank vertical gap for an invisible control.
+{% endcomment %}
+{% for field in form %}
+    {% if field.is_hidden %}{{ field }}{% else %}
+    <div class="mb-3">
+        {% if field.use_fieldset %}
+        <fieldset class="border-0 p-0 m-0">
+            <legend class="form-label h6 mb-2">
+                {{ field.label }}{% if field.field.required %}<span class="required-marker" aria-hidden="true">*</span>{% endif %}
+            </legend>
+        {% else %}
+            <label for="{{ field.id_for_label }}" class="form-label">
+                {{ field.label }}{% if field.field.required %}<span class="required-marker" aria-hidden="true">*</span>{% endif %}
+            </label>
+        {% endif %}
+
+        {{ field }}
+
+        {% if field.help_text %}
+            <div class="form-text" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>
+        {% endif %}
+
+        {% if field.errors %}
+            <div id="{{ field.auto_id }}_error">
+                {% for error in field.errors %}
+                    <p class="field-error mb-0">
+                        <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                        <span><span class="visually-hidden">Error: </span>{{ error }}</span>
+                    </p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if field.use_fieldset %}
+        </fieldset>
+        {% endif %}
+    </div>
+    {% endif %}
+{% endfor %}

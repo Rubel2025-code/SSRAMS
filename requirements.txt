@@ -1,0 +1,52 @@
+# SSRAMS v3.1 — Python dependencies
+# Install with: pip install -r requirements.txt
+#
+# STATUS as of 2026-08-31. Versions the test suite last ran green on
+# (Python 3.11.3):
+#
+#   Django          5.2.17    installed, verified
+#   python-dotenv   1.2.3     installed, verified
+#   google-genai    2.20.0    installed, verified (SDK always mocked in tests;
+#                             live request path verified separately, README §11a)
+#   mssql-django    1.8.0     installed
+#   pyodbc          5.3.0     installed
+#   gunicorn        26.2.0    installed, not exercised
+#
+# The suite runs on DB_ENGINE=sqlite_dev_fallback. mssql-django/pyodbc are
+# present as Python packages, but reaching a real SQL Server additionally
+# needs the OS-level "ODBC Driver 18 for SQL Server" (README.md §4).
+#
+# Freeze exact versions with `pip freeze > requirements.lock.txt` if your
+# team wants reproducible installs.
+
+Django>=5.0,<5.3
+
+# Microsoft SQL Server backend for Django's ORM (SRS §2.1.3). Requires
+# the "ODBC Driver 18 for SQL Server" to be installed at the OS level —
+# see README.md "Database Configuration" for install links per OS.
+mssql-django>=1.5
+pyodbc>=5.1
+
+# Environment variable loading for config/settings.py (.env support).
+python-dotenv>=1.0
+
+# Gemini API client (SRS §2.1.1). This is the CURRENT Google GenAI SDK,
+# imported as `from google import genai`. Only
+# apps/ai_advisor/services/gemini_service.py imports it — no other module
+# in the project touches the Gemini SDK.
+#
+# Do NOT add the pre-1.0 Google generative client alongside this one. It
+# is end-of-life (its import prints "All support ... has ended"), it uses
+# an incompatible call style, and having both installed is what previously
+# let gemini_service.py be written against one SDK while the other was the
+# one actually present — the AI Advisor then failed closed on every
+# request. apps/ai_advisor/tests.py has a guard test for this.
+#
+# Upper bound is deliberate: this SDK ships breaking changes on major
+# version bumps, and the whole integration is one module, so pinning the
+# major is cheap insurance.
+google-genai>=1.0,<3
+
+# WSGI server for running the app outside `manage.py runserver` in a
+# staging/production-like environment.
+gunicorn>=22.0

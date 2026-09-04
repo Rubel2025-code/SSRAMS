@@ -1,0 +1,91 @@
+{% extends "base/base.html" %}
+{% block title %}AI Advisor{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9:
+   * The question textarea had no help text explaining the FR-19 grounding
+     rule, only a placeholder -- which disappears on first keystroke and is
+     not a reliable description. It now has a real associated hint.
+   * The recent-questions list was <div class="list-group"> holding
+     <div class="list-group-item">s: a list of items marked up as neither.
+     It is now a real <ul>.
+   * "You asked" / the answer are now visually distinguished, not two
+     identical paragraphs.
+   * Outcome badges moved to ai_advisor/_outcome_chip.html.
+
+   CAUTION: a test asserts one student's page does NOT contain another
+   student's question text, so the history loop must stay bound to
+   `history` from the view -- do not widen it. {% endcomment %}
+<h1 class="h3 page-title mb-1">Context-Aware AI Advisor</h1>
+<p class="page-subtitle mb-4">
+    Ask a question about your own scholarships, eligibility, or readiness.
+    Answers are grounded strictly in your own SSRAMS data.
+</p>
+
+{% if not gemini_enabled %}
+    {% include "ai_advisor/_ai_unavailable_note.html" with fallback_note="The Advisor will say so rather than guess; your deterministic recommendations and eligibility results remain fully available elsewhere in SSRAMS." %}
+{% endif %}
+
+{% if profile_missing %}
+{% comment %} `profile_missing` means the StudentProfile row is absent, not merely
+   incomplete, and accounts:student_profile redirects such users straight back
+   to the dashboard (apps/accounts/views.py:162) -- so linking there would be a
+   loop. Same wording as recommendations/my_recommendations.html. {% endcomment %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your student profile could not be found, so the AI Advisor cannot be
+        used. Please contact support.
+    </span>
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="question" class="form-label">Your question</label>
+                <textarea name="question" id="question" class="form-control" rows="2"
+                    aria-describedby="question_helptext"
+                    placeholder="e.g. Why is my score low for this scholarship?"></textarea>
+                <div class="form-text" id="question_helptext">
+                    Answered only from your own SSRAMS data. If the answer isn't
+                    in your data, the Advisor will say so instead of guessing.
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send me-1" aria-hidden="true"></i>Ask
+            </button>
+        </form>
+    </div>
+</div>
+
+<h2 class="h6">Recent Questions</h2>
+{% if history %}
+<ul class="list-group list-unstyled">
+    {% for interaction in history %}
+    <li class="list-group-item">
+        <p class="mb-2"><strong>You asked:</strong> {{ interaction.user_question }}</p>
+        <p class="mb-2">{{ interaction.ai_response_text|linebreaksbr }}</p>
+        <p class="text-muted small mb-0 d-flex flex-wrap align-items-center gap-2">
+            <span>{{ interaction.created_at|date:"M d, Y H:i" }}</span>
+            {% include "ai_advisor/_outcome_chip.html" with interaction=interaction %}
+        </p>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-chat-dots empty-icon" aria-hidden="true"></i>
+        <p class="empty-note mb-0">You haven't asked anything yet.</p>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<p class="text-muted small mt-4">
+    This is advisory guidance only — it does not change your Match Score,
+    eligibility, readiness, or deadline information, and it does not
+    make or guarantee any scholarship decision.
+</p>
+{% endblock %}

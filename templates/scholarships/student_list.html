@@ -1,0 +1,107 @@
+{% extends "base/base.html" %}
+{% block title %}Scholarships{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9 CAUTION: this page is asserted against with
+   assertNotContains(response, "Expired") / "Deactivated" / "Still Draft" --
+   those are *scholarship titles* in the discovery-visibility fixture, and
+   the test proves hidden scholarships don't reach the student catalog. Do
+   not introduce those words here as UI labels (e.g. a status chip); it
+   would fail the test for a reason that has nothing to do with the bug it
+   guards. Student-visible scholarships are all published and unexpired by
+   definition, so there is no status to show anyway. {% endcomment %}
+<h1 class="h3 page-title mb-3">Scholarships</h1>
+
+<form method="get" class="row g-2 mb-4" role="search">
+    <div class="col-sm-8 col-md-6">
+        <label for="scholarship-search" class="form-label visually-hidden">Search scholarships</label>
+        <input type="search" name="q" id="scholarship-search" value="{{ query }}"
+               class="form-control" placeholder="Search by title or organization"
+               aria-describedby="scholarship-search-help">
+        <div id="scholarship-search-help" class="form-text">
+            Matches scholarship titles and provider organization names.
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-search me-1" aria-hidden="true"></i>Search
+        </button>
+    </div>
+</form>
+
+{% if page_obj.object_list %}
+{% comment %}
+The result count gives a search a confirmable outcome -- without it,
+submitting a query that narrows 40 cards to 3 gives no feedback that the
+filter applied. role="status" announces the change to screen readers.
+{% endcomment %}
+<p class="text-muted small" role="status">
+    {{ page_obj.paginator.count }} scholarship{{ page_obj.paginator.count|pluralize }}
+    {% if query %}matching “{{ query }}”{% endif %}
+</p>
+
+<ul class="row g-3 list-unstyled">
+    {% for scholarship in page_obj %}
+    <li class="col-md-6 col-lg-4">
+        <div class="card card-linked h-100">
+            <div class="card-body d-flex flex-column">
+                <h2 class="h6">{{ scholarship.title }}</h2>
+                <p class="text-muted small mb-2">{{ scholarship.provider.organization_name }}</p>
+                <p class="mb-2"><strong class="stat-value">৳ {{ scholarship.amount }}</strong></p>
+                <p class="text-muted small flex-grow-1">
+                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
+                    Deadline: {{ scholarship.deadline|date:"M d, Y" }}
+                </p>
+                <a href="{% url 'scholarships:detail' scholarship.pk %}" class="btn btn-sm btn-outline-primary mt-2">
+                    View Details<span class="visually-hidden"> for {{ scholarship.title }}</span>
+                </a>
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-4" aria-label="Scholarship results pages">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&amp;q={{ query|urlencode }}" rel="prev">
+                <span aria-hidden="true">&laquo;</span> Previous
+            </a>
+        </li>
+        {% endif %}
+        <li class="page-item disabled">
+            <span class="page-link" aria-current="page">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&amp;q={{ query|urlencode }}" rel="next">
+                Next <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-search empty-icon" aria-hidden="true"></i>
+        <h2 class="h5 empty-title">Nothing found</h2>
+        <p class="empty-note">
+            No scholarships match your search right now.
+            {% if query %}Try a shorter or more general term.{% endif %}
+        </p>
+        {% if query %}
+        <a href="{% url 'scholarships:list' %}" class="btn btn-sm btn-outline-primary">Clear search</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<p class="text-muted small mt-4">
+    Match scores, eligibility checks, and personalized recommendations are
+    implemented in a later prompt (FR-06, FR-07).
+</p>
+{% endblock %}

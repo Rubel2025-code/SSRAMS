@@ -1,0 +1,49 @@
+{% extends "base/base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: the two large decorative glyphs were exposed to screen readers,
+   which announce bi-person-badge / bi-building as nothing useful before the
+   heading. They are now aria-hidden. The two choices are also a list: two
+   items of the same kind, which is worth announcing as "list, 2 items". {% endcomment %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <h1 class="h4 mb-4 text-center">Create your {{ site_name }} account</h1>
+        <ul class="row g-4 list-unstyled">
+            <li class="col-md-6">
+                <div class="card card-linked shadow-sm h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="bi bi-person-badge display-5 text-primary mb-3" aria-hidden="true"></i>
+                        <h2 class="h5">I'm a Student</h2>
+                        <p class="text-muted flex-grow-1">
+                            Discover scholarships, check your eligibility, and get
+                            AI-assisted guidance on what to apply for next.
+                        </p>
+                        <a href="{% url 'accounts:register_student' %}" class="btn btn-primary">
+                            Register as Student
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="col-md-6">
+                <div class="card card-linked shadow-sm h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="bi bi-building display-5 text-primary mb-3" aria-hidden="true"></i>
+                        <h2 class="h5">I'm a Scholarship Provider</h2>
+                        <p class="text-muted flex-grow-1">
+                            Publish scholarships, define your own eligibility criteria
+                            and weights, and review applicants.
+                        </p>
+                        <a href="{% url 'accounts:register_provider' %}" class="btn btn-outline-primary">
+                            Register as Provider
+                        </a>
+                    </div>
+                </div>
+            </li>
+        </ul>
+        <p class="text-center mt-4 mb-0 text-muted small">
+            Administrator accounts are created internally and are not available
+            through public registration.
+        </p>
+    </div>
+</div>
+{% endblock %}

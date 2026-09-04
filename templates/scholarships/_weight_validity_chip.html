@@ -1,0 +1,33 @@
+{% comment %}
+Weight-total validity chip. Always include with BOTH parameters:
+
+    {% include "scholarships/_weight_validity_chip.html" with is_valid=validation.is_valid total=validation.total %}
+
+or, in a list where each row has its own scholarship:
+
+    {% include "scholarships/_weight_validity_chip.html" with is_valid=scholarship.weights_are_valid total=scholarship.total_weight_percent %}
+
+Both are required -- there is deliberately no fallback to a `validation`
+object in context. An omitted template variable resolves to the empty
+string, not None, so `default_if_none` would not catch it and a missing
+argument would silently render "must total 100%" for a perfectly valid
+configuration. Two explicit parameters cannot fail that way.
+
+A scholarship can only be published when its criterion weights total
+exactly 100% (WeightService.validate_configuration).
+
+PROMPT 9: the old markup was `<span class="text-success">100% &check;</span>`
+versus `<span class="text-danger">92% &cross;</span>`. The check/cross
+glyphs did carry non-color meaning visually, but they are punctuation to a
+screen reader and announce as nothing useful. These chips say which state
+it is in words.
+{% endcomment %}
+{% if is_valid %}
+    <span class="chip chip-success">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>{{ total }}% — valid
+    </span>
+{% else %}
+    <span class="chip chip-danger">
+        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>{{ total }}% — must total 100%
+    </span>
+{% endif %}

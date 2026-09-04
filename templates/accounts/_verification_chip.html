@@ -1,0 +1,33 @@
+{% comment %}
+Provider verification-status chip. Include with:
+
+    {% include "accounts/_verification_chip.html" with profile=provider %}
+
+`profile` must be a ProviderProfile, because the label comes from
+get_verification_status_display() rather than being restated here -- the
+three labels live in ProviderVerificationStatus (apps/common/enums.py) and
+should have exactly one definition.
+
+PROMPT 9: admin_verification_list.html and admin_verification_detail.html
+each had their own badge chain for these three states. The chips add an
+icon so the state is not carried by color alone (WCAG 1.4.1); the `else`
+branch is kept for forward-compatibility if a fourth status is ever added,
+and falls back to the enum's own label.
+{% endcomment %}
+{% if profile.verification_status == "approved" %}
+    <span class="chip chip-success">
+        <i class="bi bi-patch-check-fill" aria-hidden="true"></i>{{ profile.get_verification_status_display }}
+    </span>
+{% elif profile.verification_status == "rejected" %}
+    <span class="chip chip-danger">
+        <i class="bi bi-x-circle-fill" aria-hidden="true"></i>{{ profile.get_verification_status_display }}
+    </span>
+{% elif profile.verification_status == "pending" %}
+    <span class="chip chip-warning">
+        <i class="bi bi-hourglass-split" aria-hidden="true"></i>{{ profile.get_verification_status_display }}
+    </span>
+{% else %}
+    <span class="chip chip-neutral">
+        <i class="bi bi-question-circle-fill" aria-hidden="true"></i>{{ profile.get_verification_status_display|default:"Unknown" }}
+    </span>
+{% endif %}

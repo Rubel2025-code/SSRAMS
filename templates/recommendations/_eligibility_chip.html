@@ -1,0 +1,24 @@
+{% comment %}
+Eligibility chip (FR-07). Include with the raw EligibilityStatus value:
+
+    {% include "recommendations/_eligibility_chip.html" with status=entry.eligibility_status %}
+
+The label is derived here rather than passed in, because the value often
+arrives on a plain dataclass (e.g. deadline_service's DeadlineEntry,
+where eligibility_status is a bare str) that has no
+get_eligibility_status_display() to call. That is exactly how
+top_opportunities.html came to render the raw database token
+"not_eligible" to students.
+
+Values are from EligibilityStatus in apps/common/enums.py:
+    eligible / not_eligible / missing_info
+The {% else %} branch treats anything unrecognised as missing_info, which
+is the safe reading: "we could not confirm", not "you qualify".
+{% endcomment %}
+{% if status == "eligible" %}
+    <span class="chip chip-success"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Eligible</span>
+{% elif status == "not_eligible" %}
+    <span class="chip chip-danger"><i class="bi bi-x-circle-fill" aria-hidden="true"></i>Not Eligible</span>
+{% else %}
+    <span class="chip chip-warning"><i class="bi bi-question-circle-fill" aria-hidden="true"></i>Missing Information</span>
+{% endif %}

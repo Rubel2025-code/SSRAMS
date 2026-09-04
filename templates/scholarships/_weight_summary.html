@@ -1,0 +1,71 @@
+{% comment %}
+Shared weight-validation summary table. Included wherever a
+WeightValidationResult (`validation` in context) needs to be shown:
+provider_detail.html, provider_weights.html, admin_detail.html.
+
+PROMPT 9:
+* The table was unwrapped, so on a phone it pushed the page sideways.
+  It is now a .table-card > .table-responsive[tabindex="0"] region, the
+  same nesting used everywhere else (see base.css -- the two classes must
+  never be on one element).
+* The TOTAL row said "92% &cross;". A cross glyph is punctuation: it
+  announces as nothing, so a screen-reader user heard "92%" with no
+  indication that anything was wrong. It now uses the shared validity
+  chip, which says so in words.
+{% endcomment %}
+<div class="table-card">
+    <div class="table-responsive" tabindex="0" role="region" aria-label="Criterion weights">
+        <table class="table table-sm mb-0">
+            <caption class="visually-hidden">
+                Each criterion's weight for this scholarship and their total,
+                which must be exactly 100% before it can be published.
+            </caption>
+            <thead>
+                <tr>
+                    <th scope="col">Criterion</th>
+                    <th scope="col" class="text-end">Weight</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for criterion in scholarship.criteria.all %}
+                <tr>
+                    <th scope="row" class="fw-normal">
+                        {{ criterion.get_criterion_type_display }}
+                        {% if not criterion.is_mandatory %}<span class="chip chip-neutral ms-1">optional</span>{% endif %}
+                    </th>
+                    <td class="text-end">
+                        {% if criterion.weight %}
+                            {{ criterion.weight.weight_percent }}%
+                        {% else %}
+                            <span class="chip chip-danger">
+                                <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>not set
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="2" class="text-muted">No criteria defined yet.</td></tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold">
+                    <th scope="row">TOTAL</th>
+                    <td class="text-end">
+                        {% include "scholarships/_weight_validity_chip.html" with is_valid=validation.is_valid total=validation.total %}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% if not validation.is_valid and validation.issues %}
+<div class="alert alert-warning small mb-0 mt-2 d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <div>
+        <span class="visually-hidden">Problems with this weight configuration: </span>
+        <ul class="mb-0">
+            {% for issue in validation.issues %}<li>{{ issue }}</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}

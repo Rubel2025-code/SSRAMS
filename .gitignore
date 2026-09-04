@@ -1,0 +1,42 @@
+# --- Environment / secrets ---
+.env
+*.env
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+
+# --- Django ---
+*.log
+local_settings.py
+db.sqlite3
+dev_fallback.sqlite3
+/staticfiles/
+/media/*
+!/media/.gitkeep
+
+# --- Testing / coverage ---
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Node (if any team member adds frontend tooling later) ---
+node_modules/

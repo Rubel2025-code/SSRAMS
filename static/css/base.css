@@ -1,0 +1,1117 @@
+/*
+ * static/css/base.css
+ * SSRAMS v3.1 — Prompt 9 (UI/UX) design layer on top of Bootstrap 5.3.
+ *
+ * WHAT CHANGED IN PROMPT 9, AND WHY IT IS STRUCTURED THIS WAY
+ * ----------------------------------------------------------
+ * Prompts 1-7 kept this file deliberately tiny (53 lines) because the
+ * brief said not to spend time on visual polish yet. Prompt 9 is that
+ * polish pass. It is expressed as a *token layer over Bootstrap* rather
+ * than a replacement for it:
+ *
+ *   - Every one of the 42 templates already speaks Bootstrap's class
+ *     vocabulary (.card, .badge, .table, .row/.col-*). Replacing the
+ *     framework would mean rewriting all of them and re-verifying 296
+ *     tests for zero user-visible gain.
+ *   - So instead we override Bootstrap's own CSS custom properties
+ *     (--bs-*). That means existing markup inherits the new design
+ *     automatically -- a .btn-primary in a template written in Prompt 3
+ *     picks up the Prompt 9 palette without being touched.
+ *
+ * Consequence for future work: prefer adding a token or overriding a
+ * --bs-* variable here over writing a one-off rule in a template. If you
+ * need a new component, add it to the COMPONENTS section below so it is
+ * reusable, and keep using Bootstrap's utilities for layout.
+ *
+ * ACCESSIBILITY COMMITMENTS ENCODED HERE (SRS §3.3 usability):
+ *   - Every text/background pair below is >= 4.5:1 (WCAG 2.1 AA for body
+ *     text). The two brand colors were chosen/verified for this: white on
+ *     --ssrams-accent is 5.5:1, white on --ssrams-primary is 8.9:1.
+ *   - Focus is never removed, only restyled, and uses :focus-visible so
+ *     mouse users don't see rings but keyboard users always do.
+ *   - Status is never communicated by color alone (see STATUS CHIPS) --
+ *     every colored chip carries text, and an icon where space allows.
+ *   - prefers-reduced-motion and prefers-color-scheme are both honored.
+ */
+
+/* =====================================================================
+ * 1. TOKENS
+ * ===================================================================== */
+
+:root {
+    /* Native widget chrome (scrollbars, date pickers, select arrows) has to
+       follow the token palette, not the OS. base.html declares
+       <meta name="color-scheme" content="light dark">, which tells the UA
+       both are supported -- without pinning it here, a visitor whose OS is
+       dark got dark scrollbars and dark date pickers on top of our light
+       surfaces. `color-scheme` is set alongside the tokens in both themes so
+       the two can never disagree. */
+    color-scheme: light;
+
+    /* Brand. Kept at the original Prompt 1 values so the existing look is
+       preserved -- these are IUBAT-adjacent academic navy/blue tones. */
+    --ssrams-primary: #1a3d5c;
+    --ssrams-primary-dark: #12293e;
+    --ssrams-accent: #2c6e9e;
+    --ssrams-accent-dark: #24597f;
+
+    /* Neutrals. --ssrams-muted is deliberately darker than Bootstrap's
+       default .text-muted, which sits at ~4.0:1 on our tinted page
+       background and therefore fails AA for small text. This value is
+       5.3:1 on --ssrams-bg. */
+    --ssrams-bg: #f7f9fb;
+    --ssrams-surface: #ffffff;
+    --ssrams-border: #dfe5ec;
+    --ssrams-muted: #5a6b7b;
+    --ssrams-text: #1f2933;
+
+    /* Semantic status colors, used by the status chips. Each is paired
+       with a tint for chip backgrounds so the text can stay dark enough
+       to pass AA rather than white-on-pale. */
+    --ssrams-success: #1c6b45;
+    --ssrams-success-tint: #e3f3ea;
+    --ssrams-warning: #8a5a00;
+    --ssrams-warning-tint: #fdf1dc;
+    --ssrams-danger: #a32020;
+    --ssrams-danger-tint: #fbe6e6;
+    --ssrams-info: #1c5c85;
+    --ssrams-info-tint: #e2eff8;
+    --ssrams-neutral-tint: #eef1f5;
+
+    /* Elevation + shape. One radius scale and two shadows only; more
+       than that and the UI stops looking like one system. */
+    --ssrams-radius: 0.5rem;
+    --ssrams-radius-sm: 0.375rem;
+    --ssrams-shadow-sm: 0 1px 2px rgba(16, 32, 48, 0.06);
+    --ssrams-shadow: 0 2px 8px rgba(16, 32, 48, 0.08);
+
+    /* Hand Bootstrap our palette so untouched markup inherits it. */
+    --bs-primary: var(--ssrams-accent);
+    --bs-primary-rgb: 44, 110, 158;
+    --bs-link-color: var(--ssrams-accent);
+    --bs-link-color-rgb: 44, 110, 158;
+    --bs-link-hover-color: var(--ssrams-primary);
+    --bs-body-color: var(--ssrams-text);
+    --bs-body-bg: var(--ssrams-bg);
+    --bs-secondary-color: var(--ssrams-muted);
+    --bs-border-color: var(--ssrams-border);
+    --bs-border-radius: var(--ssrams-radius);
+    --bs-focus-ring-color: rgba(44, 110, 158, 0.4);
+
+    /* Bootstrap's own #dc3545 is 4.29:1 on --ssrams-bg, and it does not
+       change in dark mode (3.54:1 on --ssrams-surface there). It drives
+       .text-danger and .border-danger, both of which we use, so it is
+       repointed at the token that does flip per theme. The -danger buttons
+       are unaffected: Bootstrap compiles their colors as literals. */
+    --bs-danger-rgb: 163, 32, 32;
+}
+
+/* ---------------------------------------------------------------------
+ * Dark mode. The single entry point is [data-bs-theme="dark"], which is
+ * set on <html> before first paint by the inline script in base.html --
+ * from localStorage when the visitor has chosen a theme, otherwise from
+ * prefers-color-scheme. Doing the OS check there rather than in a
+ * @media block keeps one palette in one place: a
+ * @media (prefers-color-scheme: dark) rule cannot share this declaration
+ * block, so it would mean maintaining a second copy of every token, and
+ * a partial copy (the previous `color-scheme: dark` on its own) produced
+ * dark native widgets on light surfaces.
+ * ------------------------------------------------------------------- */
+
+[data-bs-theme="dark"] {
+    color-scheme: dark;
+
+    --ssrams-bg: #12181f;
+    --ssrams-surface: #1a222c;
+    --ssrams-border: #2e3a48;
+    --ssrams-muted: #a3b1c0;
+    --ssrams-text: #e8edf2;
+
+    /* Brand tones are lightened for dark surfaces: #2c6e9e on a near
+       black background is only ~2.6:1, which is unreadable as text. */
+    --ssrams-accent: #6aaed6;
+    --ssrams-accent-dark: #8cc3e3;
+    --ssrams-primary: #b9d6e8;
+
+    --ssrams-success: #6ed6a0;
+    --ssrams-success-tint: #143527;
+    --ssrams-warning: #e8b866;
+    --ssrams-warning-tint: #3a2c11;
+    --ssrams-danger: #f08b8b;
+    --ssrams-danger-tint: #3b1a1a;
+    --ssrams-info: #7dc0e8;
+    --ssrams-info-tint: #14303f;
+    --ssrams-neutral-tint: #232d38;
+
+    --bs-primary: var(--ssrams-accent);
+    --bs-primary-rgb: 106, 174, 214;
+    --bs-link-color: var(--ssrams-accent);
+    --bs-link-color-rgb: 106, 174, 214;
+    --bs-link-hover-color: var(--ssrams-accent-dark);
+    --bs-body-color: var(--ssrams-text);
+    --bs-body-bg: var(--ssrams-bg);
+    --bs-secondary-color: var(--ssrams-muted);
+    --bs-border-color: var(--ssrams-border);
+    --bs-focus-ring-color: rgba(106, 174, 214, 0.45);
+    --bs-danger-rgb: 240, 139, 139; /* see :root -- .text-danger / .border-danger */
+    --ssrams-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --ssrams-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* =====================================================================
+ * 2. LAYOUT + BASE
+ * ===================================================================== */
+
+body {
+    background-color: var(--ssrams-bg);
+    color: var(--ssrams-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* Long scholarship titles and provider names are user-supplied and
+       can be single unbroken strings; without this they push card and
+       table layouts sideways on narrow screens. */
+    overflow-wrap: break-word;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+footer {
+    flex-shrink: 0;
+    background-color: var(--ssrams-surface) !important;
+    border-top: 1px solid var(--ssrams-border) !important;
+    color: var(--ssrams-muted);
+}
+
+/* ---------------------------------------------------------------------
+ * Skip link (WCAG 2.4.1 Bypass Blocks). The student navbar carries 10
+ * links, so a keyboard or screen-reader user would otherwise traverse
+ * all of them on every page before reaching the content.
+ * ------------------------------------------------------------------- */
+
+.skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -3rem;
+    z-index: 1080;
+    padding: 0.5rem 1rem;
+    background-color: var(--ssrams-surface);
+    color: var(--bs-link-color);
+    border: 2px solid var(--ssrams-accent);
+    border-radius: var(--ssrams-radius-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: top 0.15s ease-in-out;
+}
+
+.skip-link:focus {
+    top: 0.5rem;
+}
+
+/* ---------------------------------------------------------------------
+ * Focus. Bootstrap's default ring is kept but re-colored and widened;
+ * :focus-visible means pointer users don't see it on click while
+ * keyboard users always do. Never replace this with outline: none.
+ * ------------------------------------------------------------------- */
+
+:focus-visible {
+    outline: 3px solid var(--ssrams-accent);
+    outline-offset: 2px;
+    border-radius: var(--ssrams-radius-sm);
+}
+
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
+    box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color);
+}
+
+/* =====================================================================
+ * 3. TYPOGRAPHY
+ * ===================================================================== */
+
+h1, .h1, h2, .h2, h3, .h3 {
+    color: var(--ssrams-primary);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* Page title + standfirst pattern used at the top of nearly every
+   template ("Top Opportunities" + one muted explanatory line). */
+.page-title {
+    color: var(--ssrams-primary);
+    font-weight: 650;
+}
+
+.page-subtitle {
+    color: var(--ssrams-muted);
+    max-width: 68ch; /* keeps explanatory copy readable on wide screens */
+}
+
+.text-muted {
+    color: var(--ssrams-muted) !important;
+}
+
+/* Numeric readouts (match score, readiness, counts). Tabular figures
+   stop the numbers from jittering as values change width. */
+.stat-value,
+.display-6 {
+    font-weight: 650;
+    color: var(--ssrams-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* =====================================================================
+ * 4. COMPONENTS
+ * ===================================================================== */
+
+/* --- Navbar ---------------------------------------------------------- */
+
+.ssrams-navbar {
+    background-color: var(--ssrams-primary-dark);
+    box-shadow: var(--ssrams-shadow-sm);
+}
+
+[data-bs-theme="dark"] .ssrams-navbar {
+    background-color: #0d1520;
+    border-bottom: 1px solid var(--ssrams-border);
+}
+
+.navbar-brand {
+    letter-spacing: 0.02em;
+}
+
+/* The active page gets a persistent underline, not just a color shift --
+   color alone would be the only cue for a colorblind user. Pairs with
+   aria-current="page" in navbar.html. */
+.ssrams-navbar .nav-link[aria-current="page"] {
+    color: #fff;
+    font-weight: 600;
+    box-shadow: inset 0 -3px 0 0 currentColor;
+}
+
+.ssrams-navbar .nav-link {
+    border-radius: var(--ssrams-radius-sm);
+}
+
+/* --- Cards ----------------------------------------------------------- */
+
+.card {
+    background-color: var(--ssrams-surface);
+    border: 1px solid var(--ssrams-border);
+    border-radius: var(--ssrams-radius);
+    box-shadow: var(--ssrams-shadow-sm);
+}
+
+/* Only cards that are genuinely a link/action lift on hover. A static
+   information card that moves under the cursor reads as clickable and
+   is a small usability lie. */
+.card-linked {
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.card-linked:hover,
+.card-linked:focus-within {
+    transform: translateY(-2px);
+    box-shadow: var(--ssrams-shadow);
+    border-color: var(--ssrams-accent);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid var(--ssrams-border);
+    font-weight: 600;
+}
+
+/* --- Stat tiles (dashboard counters) --------------------------------- */
+
+.stat-tile {
+    display: block;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Deliberately NOT scoped to .stat-tile: only the student dashboard's
+   counters are links (and so wrapped in a .stat-tile anchor). The provider
+   and admin dashboards render the same counters as plain cards, and their
+   labels have to look identical to the student's. */
+.stat-label {
+    color: var(--ssrams-muted);
+    font-size: 0.875rem;
+}
+
+/* --- Tables ---------------------------------------------------------- */
+
+.table {
+    --bs-table-bg: var(--ssrams-surface);
+    border-color: var(--ssrams-border);
+    margin-bottom: 0;
+}
+
+.table > thead {
+    /* Header cells get a tint + uppercase micro-label treatment so the
+       header row is distinguishable without relying on bold alone. */
+    background-color: var(--ssrams-neutral-tint);
+}
+
+.table > thead th {
+    color: var(--ssrams-primary);
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--ssrams-border);
+}
+
+/* .table-responsive is a scroll container, which must be focusable and
+   labelled to be keyboard-accessible (WCAG 2.1.1) -- templates pair this
+   with tabindex="0" and an aria-label. */
+.table-responsive:focus-visible {
+    outline: 3px solid var(--ssrams-accent);
+    outline-offset: 2px;
+}
+
+/* Rounded, bordered shell for a table. Use it as the OUTER element and
+   put .table-responsive inside it:
+
+       <div class="table-card">
+         <div class="table-responsive" tabindex="0" role="region" aria-label="...">
+           <table class="table"> ... </table>
+
+   Do not put both classes on one element. overflow:hidden here (which is
+   what clips the table's square corners to the rounded border) would
+   override Bootstrap's overflow-x:auto and silently kill horizontal
+   scrolling on narrow screens -- base.css loads after Bootstrap, so it
+   wins. */
+.table-card {
+    background-color: var(--ssrams-surface);
+    border: 1px solid var(--ssrams-border);
+    border-radius: var(--ssrams-radius);
+    overflow: hidden;
+}
+
+/* --- Status chips ---------------------------------------------------- *
+ * Used for eligibility, application status, deadline urgency, and
+ * verification state. Deliberately NOT Bootstrap's .badge text-bg-*:
+ * those put white text on saturated fills, several of which fall below
+ * 4.5:1. These use a dark ink on a pale tint, which passes AA and also
+ * survives being printed in grayscale.
+ * ------------------------------------------------------------------- */
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.chip-success {
+    background-color: var(--ssrams-success-tint);
+    color: var(--ssrams-success);
+    border-color: var(--ssrams-success);
+}
+
+.chip-warning {
+    background-color: var(--ssrams-warning-tint);
+    color: var(--ssrams-warning);
+    border-color: var(--ssrams-warning);
+}
+
+.chip-danger {
+    background-color: var(--ssrams-danger-tint);
+    color: var(--ssrams-danger);
+    border-color: var(--ssrams-danger);
+}
+
+.chip-info {
+    background-color: var(--ssrams-info-tint);
+    color: var(--ssrams-info);
+    border-color: var(--ssrams-info);
+}
+
+.chip-neutral {
+    background-color: var(--ssrams-neutral-tint);
+    color: var(--ssrams-muted);
+    border-color: var(--ssrams-border);
+}
+
+/* --- Meters (match score, readiness) --------------------------------- */
+
+.progress {
+    background-color: var(--ssrams-neutral-tint);
+    border-radius: 999px;
+    height: 0.625rem;
+}
+
+.progress-bar {
+    background-color: var(--ssrams-accent);
+}
+
+/* A labelled meter row: caption on the left, value on the right, bar
+   underneath. Used on recommendation detail and readiness panels. */
+.meter-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.meter-head .meter-value {
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    color: var(--ssrams-primary);
+}
+
+/* --- Forms ----------------------------------------------------------- */
+
+.form-label {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin-bottom: 0.25rem;
+}
+
+.form-control,
+.form-select {
+    background-color: var(--ssrams-surface);
+    border-color: var(--ssrams-border);
+    color: var(--ssrams-text);
+    border-radius: var(--ssrams-radius-sm);
+}
+
+.form-text {
+    color: var(--ssrams-muted);
+}
+
+/* Required marker. The asterisk is decorative (aria-hidden in markup);
+   the input's own required attribute is what assistive tech announces. */
+.required-marker {
+    color: var(--ssrams-danger);
+    margin-left: 0.15rem;
+}
+
+/* Invalid state. Driven off the aria-invalid attribute that Django 5.2
+   already puts on the widget, so no widget attrs need setting in
+   forms.py and the a11y attribute and the visual cue can never drift
+   apart. Border alone would be color-only, so the field's error message
+   (rendered by accounts/_form_fields.html) carries an icon too. */
+.form-control[aria-invalid="true"],
+.form-select[aria-invalid="true"],
+.form-check-input[aria-invalid="true"] {
+    border-color: var(--ssrams-danger);
+}
+
+.form-control[aria-invalid="true"]:focus,
+.form-select[aria-invalid="true"]:focus {
+    border-color: var(--ssrams-danger);
+    box-shadow: 0 0 0 0.25rem rgba(163, 32, 32, 0.25);
+}
+
+/* Django's own <ul class="errorlist">, which appears wherever a form is
+   rendered without our partial (e.g. {{ form.as_p }}). Styled so those
+   pages don't fall back to raw browser bullets. */
+ul.errorlist {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.25rem 0 0;
+    color: var(--ssrams-danger);
+    font-size: 0.875rem;
+}
+
+/* Field errors carry an icon as well as red text so the error state is
+   not color-only. */
+.field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.3rem;
+    color: var(--ssrams-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Fixed-width column for the numeric weight inputs on
+   scholarships/provider_weights.html. Replaces an inline
+   style="width: 160px" on the <th>; in rem so it tracks the user's font
+   size instead of pinning to device pixels. min-width, not width, so the
+   column can still grow if a longer header is added later. */
+.weight-col {
+    min-width: 10rem;
+}
+
+/* --- Alerts ---------------------------------------------------------- */
+
+.alert {
+    border-radius: var(--ssrams-radius);
+    border-width: 1px;
+    border-left-width: 4px;
+}
+
+/* --- Empty states ---------------------------------------------------- */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+
+.empty-state .empty-icon {
+    font-size: 2.5rem;
+    color: var(--ssrams-muted);
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.empty-state .empty-title {
+    color: var(--ssrams-primary);
+}
+
+.empty-state .empty-note {
+    color: var(--ssrams-muted);
+    max-width: 52ch;
+    margin: 0 auto 1rem;
+}
+
+/* --- Definition lists (profile / scholarship facts) ------------------ */
+
+.facts-list {
+    margin-bottom: 0;
+}
+
+.facts-list dt {
+    color: var(--ssrams-muted);
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+
+.facts-list dd {
+    margin-bottom: 0.75rem;
+    color: var(--ssrams-text);
+}
+
+/* --- AI-generated prose ---------------------------------------------- */
+
+/* Gemini returns plain text whose newlines carry the structure (and the
+   deterministic fallback builds its numbered list the same way), so the
+   breaks have to be preserved rather than collapsed. This replaces an
+   inline style="white-space: pre-line;" that was repeated on the strategy
+   planner and profile improvement pages. The measure cap applies the same
+   readability limit as .empty-note -- these are the longest prose blocks
+   in the app and ran the full width of a desktop card. */
+.ai-prose {
+    white-space: pre-line;
+    max-width: 68ch;
+}
+
+/* =====================================================================
+ * 5. RESPONSIVENESS
+ * ===================================================================== */
+
+/* Tap targets. WCAG 2.5.8 asks for 24x24 CSS px minimum; on touch
+   layouts the small outline buttons that end table rows were under
+   that. Only applied on coarse pointers so desktop density is kept. */
+@media (pointer: coarse) {
+    .btn-sm {
+        min-height: 2.25rem;
+        padding-inline: 0.75rem;
+    }
+
+    .nav-link {
+        padding-block: 0.5rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    /* The 3-up metric strip inside opportunity cards (Match / Ready /
+       Deadline) cannot hold three columns on a phone -- "Passed"/"Today"
+       and the labels below them wrap to two lines each. Below Bootstrap's
+       sm breakpoint the templates' .row .col-4 wraps 2-then-1 instead. */
+    .metric-strip > [class*="col-"] {
+        flex: 0 0 auto;
+        width: 50%;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    /* Header rows that pair a title with an action button stack rather
+       than squeezing the button. */
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+}
+
+/* =====================================================================
+ * 6. USER PREFERENCES: MOTION + PRINT
+ * ===================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Students print scholarship detail and readiness action plans to work
+   from offline, so print is a real output mode, not an afterthought. */
+@media print {
+    .ssrams-navbar,
+    footer,
+    .skip-link,
+    .btn,
+    .alert-dismissible .btn-close,
+    /* "Back to ..." breadcrumbs are screen navigation and mean nothing on
+       paper; selected by attribute so every page gets it without each
+       template having to opt in. */
+    nav[aria-label="Breadcrumb"],
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    .card,
+    .table-card {
+        border: 1px solid #999 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+
+    .chip {
+        border: 1px solid #333 !important;
+        background: transparent !important;
+        color: #000 !important;
+    }
+
+    a[href]::after {
+        /* Printed pages lose link targets otherwise. */
+        content: " (" attr(href) ")";
+        font-size: 0.75em;
+        color: #555;
+    }
+
+    a[href^="#"]::after,
+    a[href^="javascript"]::after {
+        content: "";
+    }
+}/* =========================================================
+   SSRAMS GLOBAL AMBIENT BACKGROUND
+   ========================================================= */
+
+.global-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 10% 15%,
+            rgba(44, 110, 158, 0.14) 0%,
+            rgba(44, 110, 158, 0.05) 22%,
+            transparent 45%
+        ),
+        radial-gradient(
+            circle at 90% 80%,
+            rgba(44, 110, 158, 0.10) 0%,
+            rgba(44, 110, 158, 0.035) 24%,
+            transparent 48%
+        );
+}
+
+
+/* ---------------------------------------------------------
+   Moving grid
+   --------------------------------------------------------- */
+
+.bg-grid {
+    position: absolute;
+    inset: -100%;
+    width: 300%;
+    height: 300%;
+
+    background-image:
+        linear-gradient(
+            rgba(44, 110, 158, 0.055) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(44, 110, 158, 0.055) 1px,
+            transparent 1px
+        );
+
+    background-size: 45px 45px;
+
+    transform: rotate(-7deg);
+
+    animation: ssramsGridMove 32s linear infinite;
+}
+
+
+/* ---------------------------------------------------------
+   Ambient floating lights
+   --------------------------------------------------------- */
+
+.bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(75px);
+    will-change: transform;
+}
+
+.bg-orb-1 {
+    width: 360px;
+    height: 360px;
+
+    left: -160px;
+    top: -140px;
+
+    background: rgba(44, 110, 158, 0.16);
+
+    animation: ssramsOrbOne 18s ease-in-out infinite;
+}
+
+.bg-orb-2 {
+    width: 420px;
+    height: 420px;
+
+    right: -180px;
+    top: 28%;
+
+    background: rgba(44, 110, 158, 0.12);
+
+    animation: ssramsOrbTwo 22s ease-in-out infinite;
+}
+
+.bg-orb-3 {
+    width: 330px;
+    height: 330px;
+
+    left: 38%;
+    bottom: -180px;
+
+    background: rgba(106, 174, 214, 0.10);
+
+    animation: ssramsOrbThree 20s ease-in-out infinite;
+}
+
+
+/* ---------------------------------------------------------
+   Floating particles
+   --------------------------------------------------------- */
+
+.bg-particles {
+    position: absolute;
+    inset: 0;
+}
+
+.bg-particles span {
+    position: absolute;
+
+    width: 4px;
+    height: 4px;
+
+    border-radius: 50%;
+
+    background: var(--ssrams-accent);
+
+    opacity: 0.22;
+
+    box-shadow:
+        0 0 8px rgba(44, 110, 158, 0.35);
+
+    animation: ssramsParticle 10s ease-in-out infinite;
+}
+
+.bg-particles span:nth-child(1) {
+    left: 7%;
+    top: 20%;
+    animation-delay: -1s;
+}
+
+.bg-particles span:nth-child(2) {
+    left: 17%;
+    top: 70%;
+    animation-delay: -5s;
+}
+
+.bg-particles span:nth-child(3) {
+    left: 28%;
+    top: 34%;
+    animation-delay: -3s;
+}
+
+.bg-particles span:nth-child(4) {
+    left: 39%;
+    top: 82%;
+    animation-delay: -8s;
+}
+
+.bg-particles span:nth-child(5) {
+    left: 51%;
+    top: 16%;
+    animation-delay: -4s;
+}
+
+.bg-particles span:nth-child(6) {
+    left: 62%;
+    top: 61%;
+    animation-delay: -2s;
+}
+
+.bg-particles span:nth-child(7) {
+    left: 73%;
+    top: 27%;
+    animation-delay: -7s;
+}
+
+.bg-particles span:nth-child(8) {
+    left: 83%;
+    top: 75%;
+    animation-delay: -4s;
+}
+
+.bg-particles span:nth-child(9) {
+    left: 93%;
+    top: 44%;
+    animation-delay: -6s;
+}
+
+.bg-particles span:nth-child(10) {
+    left: 12%;
+    top: 47%;
+    animation-delay: -9s;
+}
+
+.bg-particles span:nth-child(11) {
+    left: 46%;
+    top: 51%;
+    animation-delay: -10s;
+}
+
+.bg-particles span:nth-child(12) {
+    left: 68%;
+    top: 87%;
+    animation-delay: -6s;
+}
+
+
+/* ---------------------------------------------------------
+   Animation
+   --------------------------------------------------------- */
+
+@keyframes ssramsGridMove {
+    from {
+        transform: translate3d(0, 0, 0) rotate(-7deg);
+    }
+
+    to {
+        transform: translate3d(45px, 45px, 0) rotate(-7deg);
+    }
+}
+
+@keyframes ssramsOrbOne {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(100px, 70px, 0) scale(1.15);
+    }
+}
+
+@keyframes ssramsOrbTwo {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(-100px, -70px, 0) scale(1.12);
+    }
+}
+
+@keyframes ssramsOrbThree {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(80px, -60px, 0) scale(1.12);
+    }
+}
+
+@keyframes ssramsParticle {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+        opacity: 0.12;
+    }
+
+    50% {
+        transform: translate3d(0, -25px, 0);
+        opacity: 0.42;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   Keep application UI above the background
+   --------------------------------------------------------- */
+
+.skip-link,
+nav,
+main,
+footer {
+    position: relative;
+    z-index: 1;
+}
+
+
+/* ---------------------------------------------------------
+   DARK THEME
+   --------------------------------------------------------- */
+
+[data-bs-theme="dark"] .global-bg {
+    background:
+        radial-gradient(
+            circle at 10% 15%,
+            rgba(106, 174, 214, 0.15) 0%,
+            rgba(106, 174, 214, 0.06) 23%,
+            transparent 48%
+        ),
+        radial-gradient(
+            circle at 90% 80%,
+            rgba(106, 174, 214, 0.12) 0%,
+            rgba(106, 174, 214, 0.045) 25%,
+            transparent 50%
+        );
+}
+
+[data-bs-theme="dark"] .bg-grid {
+    background-image:
+        linear-gradient(
+            rgba(106, 174, 214, 0.075) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(106, 174, 214, 0.075) 1px,
+            transparent 1px
+        );
+}
+
+[data-bs-theme="dark"] .bg-orb-1 {
+    background: rgba(106, 174, 214, 0.16);
+}
+
+[data-bs-theme="dark"] .bg-orb-2 {
+    background: rgba(106, 174, 214, 0.13);
+}
+
+[data-bs-theme="dark"] .bg-orb-3 {
+    background: rgba(140, 195, 227, 0.11);
+}
+
+[data-bs-theme="dark"] .bg-particles span {
+    opacity: 0.30;
+}
+
+
+/* ---------------------------------------------------------
+   LIGHT THEME
+   --------------------------------------------------------- */
+
+[data-bs-theme="light"] .global-bg {
+    background:
+        radial-gradient(
+            circle at 10% 15%,
+            rgba(44, 110, 158, 0.075) 0%,
+            rgba(44, 110, 158, 0.025) 23%,
+            transparent 48%
+        ),
+        radial-gradient(
+            circle at 90% 80%,
+            rgba(44, 110, 158, 0.055) 0%,
+            rgba(44, 110, 158, 0.018) 25%,
+            transparent 50%
+        );
+}
+
+[data-bs-theme="light"] .bg-grid {
+    background-image:
+        linear-gradient(
+            rgba(44, 110, 158, 0.045) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(44, 110, 158, 0.045) 1px,
+            transparent 1px
+        );
+}
+
+[data-bs-theme="light"] .bg-orb-1 {
+    background: rgba(44, 110, 158, 0.10);
+}
+
+[data-bs-theme="light"] .bg-orb-2 {
+    background: rgba(44, 110, 158, 0.075);
+}
+
+[data-bs-theme="light"] .bg-orb-3 {
+    background: rgba(106, 174, 214, 0.07);
+}
+
+[data-bs-theme="light"] .bg-particles span {
+    opacity: 0.18;
+}
+
+
+/* ---------------------------------------------------------
+   Reduced motion
+   --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .bg-grid,
+    .bg-orb,
+    .bg-particles span {
+        animation: none !important;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   Print
+   --------------------------------------------------------- */
+
+@media print {
+    .global-bg {
+        display: none !important;
+    }
+}

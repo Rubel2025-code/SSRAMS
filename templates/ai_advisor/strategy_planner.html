@@ -1,0 +1,80 @@
+{% extends "base/base.html" %}
+{% block title %}AI Strategy Planner{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9:
+   * The "Gemini not configured" notice put a grey badge inline with body
+     text; it now uses ai_advisor/_ai_unavailable_note.html, shared with the
+     other two AI pages.
+   * The two outcome badges here read "Deterministic fallback (AI
+     unavailable)" / "AI request failed" while advisor.html's history list
+     called the same two outcomes something else. Both now come from
+     _outcome_chip.html, which takes its wording from
+     AIResponseOutcome.get_outcome_display().
+   * style="white-space: pre-line;" moved to the .ai-prose class -- the
+     newlines in Gemini's answer (and in the deterministic fallback's
+     numbered list) are the only structure it has, so they must survive.
+   * Added the same advisory-only footer the other two AI pages carry; this
+     page generates the most directive text of the three and was the one
+     page without it. {% endcomment %}
+<h1 class="h3 page-title mb-1">AI Strategy Planner</h1>
+<p class="page-subtitle mb-4">
+    An AI-generated, prioritized explanation of your current Top
+    Opportunities — Match Score, eligibility, readiness, and deadlines
+    are computed deterministically; Gemini only explains and sequences them.
+</p>
+
+{% if not gemini_enabled %}
+    {% include "ai_advisor/_ai_unavailable_note.html" with fallback_note="You'll still get a plain, deterministically-ranked list below." %}
+{% endif %}
+
+{% if profile_missing %}
+{% comment %} `profile_missing` means the StudentProfile row is absent, not merely
+   incomplete, and accounts:student_profile redirects such users straight back
+   to the dashboard (apps/accounts/views.py:162) -- so "complete your profile"
+   pointed nowhere. Same wording as recommendations/my_recommendations.html. {% endcomment %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your student profile could not be found, so a strategy cannot be
+        generated. Please contact support.
+    </span>
+</div>
+{% else %}
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>
+        {% if interaction %}Regenerate Strategy{% else %}Generate My Strategy{% endif %}
+    </button>
+</form>
+
+{% if interaction %}
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <h2 class="h6 mb-0">Your Strategy</h2>
+            {% include "ai_advisor/_outcome_chip.html" with interaction=interaction %}
+        </div>
+        <p class="ai-prose">{{ interaction.ai_response_text }}</p>
+        <p class="text-muted small mb-0">Generated {{ interaction.created_at|date:"M d, Y H:i" }}</p>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-diagram-3 empty-icon" aria-hidden="true"></i>
+        <p class="empty-note mb-0">
+            You haven't generated a strategy yet. Use the button above and
+            your current Top Opportunities will be explained in priority order.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<p class="text-muted small mt-4">
+    This is advisory guidance only — it does not change your Match Score,
+    eligibility, readiness, or deadline information, and it does not
+    make or guarantee any scholarship decision.
+</p>
+{% endblock %}

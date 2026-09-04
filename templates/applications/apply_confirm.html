@@ -1,0 +1,88 @@
+{% extends "base/base.html" %}
+{% block title %}Apply — {{ scholarship.title }}{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: eligibility now uses the shared chip partial instead of a
+   locally hand-rolled badge chain, so this page and top_opportunities.html
+   cannot disagree about what "missing_info" looks like. Readiness gained a
+   real progress meter -- the number alone gave no sense of scale. {% endcomment %}
+<h1 class="h3 page-title mb-1">Apply to {{ scholarship.title }}</h1>
+<p class="page-subtitle">{{ scholarship.provider.organization_name }}</p>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h6 d-flex flex-wrap align-items-center gap-2">
+                    <span>Eligibility:</span>
+                    {% include "recommendations/_eligibility_chip.html" with status=overall_status %}
+                </h2>
+                {% if overall_status == "not_eligible" %}
+                <div class="alert alert-danger small mb-0 mt-2 d-flex align-items-start" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                    <span>
+                        You do not currently meet one or more mandatory requirements.
+                        You will not be able to submit this application until that
+                        changes, but you may still save a draft.
+                    </span>
+                </div>
+                {% elif overall_status == "missing_info" %}
+                <div class="alert alert-warning small mb-0 mt-2 d-flex align-items-start" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                    <span>
+                        Your profile is missing information needed to fully
+                        determine eligibility. You may still submit, but consider
+                        completing your profile first.
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Readiness</h2>
+                <div class="meter-head">
+                    <span class="text-muted">Requirements satisfied</span>
+                    <span class="meter-value">{{ readiness.readiness_percent }}%</span>
+                </div>
+                {% comment %} role="progressbar" + the aria-value* attributes are what
+                   make the bar readable; the percentage above is the visible
+                   text equivalent, so the meter is never the only cue. {% endcomment %}
+                <div class="progress" role="progressbar"
+                     aria-label="Application readiness"
+                     aria-valuenow="{{ readiness.readiness_percent }}"
+                     aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: {{ readiness.readiness_percent }}%"></div>
+                </div>
+
+                {% if readiness.missing_items %}
+                <h3 class="h6 mt-3 mb-1">Still needed</h3>
+                <ul class="small mb-0">
+                    {% for item in readiness.missing_items %}<li>{{ item }}</li>{% endfor %}
+                </ul>
+                {% else %}
+                <p class="small mb-0 mt-3">
+                    <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>All required items are satisfied.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-body">
+                <p class="small text-muted">
+                    Creating a draft does not submit your application yet —
+                    you can review and submit it from the application detail page.
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary w-100">Create Draft Application</button>
+                </form>
+                <a href="{% url 'scholarships:detail' scholarship.pk %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

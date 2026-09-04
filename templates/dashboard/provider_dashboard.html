@@ -1,0 +1,88 @@
+{% extends "base/base.html" %}
+{% block title %}Provider Dashboard{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: five decorative icons were exposed to assistive tech. The two
+   counters are static (not links, unlike the student dashboard's), so they
+   keep a plain .card -- .card-linked would make them lift on hover and
+   imply they are clickable when they are not. {% endcomment %}
+<div class="page-header mb-1">
+    <h1 class="h3 page-title mb-0">Welcome, {{ profile.organization_name|default:user.username }}</h1>
+    {% if profile %}
+    <a href="{% url 'accounts:provider_profile' %}" class="btn btn-sm btn-outline-primary">
+        View / Edit Profile
+    </a>
+    {% endif %}
+</div>
+
+{% if profile.verification_status == "pending" %}
+<div class="alert alert-warning d-flex align-items-start" role="status">
+    <i class="bi bi-hourglass-split me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your provider account is <strong>pending verification</strong>. You'll be able
+        to publish scholarships once an administrator approves your account (FR-03).
+    </span>
+</div>
+{% elif profile.verification_status == "rejected" %}
+<div class="alert alert-danger d-flex align-items-start" role="alert">
+    <i class="bi bi-x-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your provider verification was <strong>rejected</strong>. Contact an
+        administrator for details.
+    </span>
+</div>
+{% elif profile.verification_status == "approved" %}
+<div class="alert alert-success d-flex align-items-start" role="status">
+    <i class="bi bi-patch-check-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>Your provider account is verified. You can publish scholarships.</span>
+</div>
+{% endif %}
+
+<ul class="row g-3 mb-4 list-unstyled" aria-label="My scholarship totals">
+    <li class="col-sm-6 col-lg-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-6">{{ scholarship_count }}</div>
+                <div class="stat-label">Total Scholarships</div>
+            </div>
+        </div>
+    </li>
+    <li class="col-sm-6 col-lg-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-6">{{ published_count }}</div>
+                <div class="stat-label">Published</div>
+            </div>
+        </div>
+    </li>
+</ul>
+
+<div class="card">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="h6 mb-1"><i class="bi bi-clipboard-data me-1" aria-hidden="true"></i>Scholarship Management</h2>
+            <p class="text-muted small mb-0">
+                Create scholarships, define eligibility criteria and weights,
+                and publish when ready (FR-04).
+            </p>
+        </div>
+        <a href="{% url 'scholarships:list' %}" class="btn btn-primary btn-sm">Manage Scholarships</a>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="h6 mb-1"><i class="bi bi-inbox me-1" aria-hidden="true"></i>Applications</h2>
+            <p class="text-muted small mb-0">
+                {% if pending_application_count %}
+                    <strong>{{ pending_application_count }}</strong>
+                    application{{ pending_application_count|pluralize }} awaiting your review.
+                {% else %}
+                    No applications currently awaiting review.
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'applications:provider_list' %}" class="btn btn-outline-primary btn-sm">Review Applications</a>
+    </div>
+</div>
+{% endblock %}

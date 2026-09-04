@@ -1,0 +1,117 @@
+{% extends "base/base.html" %}
+{% block title %}Student Dashboard{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9 — four decorative icons were exposed to assistive tech, and the
+   two counter tiles were an <a> wrapping a bare .card with
+   .text-decoration-none, which reads as a link but never lifts or shows a
+   hover affordance. They now use .stat-tile + .card-linked, and the whole
+   set is a list -- a group of counters is a list of counters.
+
+   The "Gemini API key not configured" badge is a state, so it is a chip
+   with an icon rather than a grey badge. {% endcomment %}
+<h1 class="h3 page-title mb-1">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+<p class="page-subtitle mb-4">Here's your scholarship overview.</p>
+
+{% if not profile %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>Your student profile could not be found. Please contact support.</span>
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <strong>{{ profile.university }}</strong> — {{ profile.department }},
+            CGPA {{ profile.cgpa }}
+        </div>
+        <a href="{% url 'accounts:student_profile' %}" class="btn btn-sm btn-outline-primary">
+            View / Edit Profile
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<ul class="row g-3 mb-4 list-unstyled" aria-label="My totals">
+    <li class="col-sm-6 col-lg-3">
+        <a href="{% url 'applications:my_bookmarks' %}" class="stat-tile">
+            <div class="card card-linked text-center h-100">
+                <div class="card-body">
+                    <div class="display-6">{{ bookmark_count }}</div>
+                    <div class="stat-label">Bookmarked Scholarships</div>
+                </div>
+            </div>
+        </a>
+    </li>
+    <li class="col-sm-6 col-lg-3">
+        <a href="{% url 'applications:my_applications' %}" class="stat-tile">
+            <div class="card card-linked text-center h-100">
+                <div class="card-body">
+                    <div class="display-6">{{ application_count }}</div>
+                    <div class="stat-label">Applications</div>
+                </div>
+            </div>
+        </a>
+    </li>
+</ul>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6"><i class="bi bi-search me-1" aria-hidden="true"></i>Top Opportunities</h2>
+                {% if top_opportunities_preview %}
+                <ul class="list-unstyled small mb-2">
+                    {% for entry in top_opportunities_preview %}
+                    <li class="mb-1">
+                        <a href="{% url 'recommendations:detail' entry.scholarship.pk %}">{{ entry.scholarship.title }}</a>
+                        — {{ entry.match_score_percent }}% match
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small mb-2">No opportunities available yet.</p>
+                {% endif %}
+                <a href="{% url 'recommendations:top_opportunities' %}" class="small">
+                    See all<span class="visually-hidden"> top opportunities</span>
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6"><i class="bi bi-list-check me-1" aria-hidden="true"></i>Readiness &amp; Action Plan</h2>
+                <p class="text-muted small mb-2">
+                    See your readiness percentage and next steps on each
+                    scholarship's detail page.
+                </p>
+                <a href="{% url 'recommendations:my_recommendations' %}" class="small">
+                    View my recommendations <span aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6"><i class="bi bi-stars me-1" aria-hidden="true"></i>AI Advisor</h2>
+                <p class="text-muted small mb-2">
+                    Ask questions, get a prioritized strategy, or see how
+                    to improve your profile.
+                </p>
+                {% if not gemini_enabled %}
+                <p class="mb-2">
+                    <span class="chip chip-warning">
+                        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>Gemini API key not configured
+                    </span>
+                </p>
+                {% endif %}
+                <a href="{% url 'ai_advisor:advisor' %}" class="small">
+                    Ask a question <span aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

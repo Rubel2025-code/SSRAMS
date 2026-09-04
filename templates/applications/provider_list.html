@@ -1,0 +1,57 @@
+{% extends "base/base.html" %}
+{% block title %}Applications{% endblock %}
+{% block content %}
+<h1 class="h3 page-title mb-3">Applications to My Scholarships</h1>
+
+{% if applications %}
+{% comment %} PROMPT 9: table given scope="col", a named scrollable region, a caption,
+   and per-row link text so a screen reader's link list does not read
+   "Review, Review, Review". {% endcomment %}
+<div class="table-card">
+    <div class="table-responsive" tabindex="0" role="region" aria-label="Applications to my scholarships">
+        <table class="table align-middle">
+            <caption class="visually-hidden">
+                Applications submitted to your scholarships, with applicant, current status, and last update.
+            </caption>
+            <thead>
+                <tr>
+                    <th scope="col">Student</th>
+                    <th scope="col">Scholarship</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Updated</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for application in applications %}
+                <tr>
+                    <th scope="row" class="fw-normal">{{ application.student.user.get_full_name|default:application.student.user.username }}</th>
+                    <td>{{ application.scholarship.title }}</td>
+                    <td>{% include "applications/_status_chip.html" with status=application.status label=application.get_status_display %}</td>
+                    <td class="text-nowrap">{{ application.updated_at|date:"M d, Y" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'applications:provider_detail' application.pk %}" class="btn btn-sm btn-outline-primary">
+                            Review<span class="visually-hidden">
+                                application from {{ application.student.user.get_full_name|default:application.student.user.username }}
+                            </span>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-inbox empty-icon" aria-hidden="true"></i>
+        <h2 class="h5 empty-title">No applications yet</h2>
+        <p class="empty-note">
+            No applications have been submitted to your scholarships yet. They
+            will appear here as students apply.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

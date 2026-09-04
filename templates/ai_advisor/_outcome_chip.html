@@ -1,0 +1,33 @@
+{% comment %}
+AI response-outcome chip. Include with:
+
+    {% include "ai_advisor/_outcome_chip.html" with interaction=interaction %}
+
+Renders nothing for the "answered" outcome -- that is the normal case, and
+labelling it would put a badge on every successful answer.
+
+`interaction` (an AIInteraction), not a bare status string, because the
+wording comes from get_outcome_display() -- AIResponseOutcome in
+apps/common/enums.py already defines all four labels and they should not be
+restated in a template.
+
+PROMPT 9: advisor.html, strategy_planner.html, and profile_improvement.html
+each had their own badge chain, and they disagreed -- the same
+`fallback_no_ai` outcome read "AI Unavailable" in the history list and
+"Deterministic fallback (AI unavailable)" in the result panels. The chips
+also add an icon so the outcome is not distinguished by badge color alone
+(WCAG 1.4.1).
+{% endcomment %}
+{% if interaction.outcome == "insufficient_info" %}
+    <span class="chip chip-warning">
+        <i class="bi bi-question-circle-fill" aria-hidden="true"></i>{{ interaction.get_outcome_display }}
+    </span>
+{% elif interaction.outcome == "fallback_no_ai" %}
+    <span class="chip chip-neutral">
+        <i class="bi bi-plug" aria-hidden="true"></i>{{ interaction.get_outcome_display }}
+    </span>
+{% elif interaction.outcome == "error" %}
+    <span class="chip chip-danger">
+        <i class="bi bi-x-circle-fill" aria-hidden="true"></i>{{ interaction.get_outcome_display }}
+    </span>
+{% endif %}

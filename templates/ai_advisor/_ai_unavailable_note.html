@@ -1,0 +1,22 @@
+{% comment %}
+"Gemini not configured" notice. Include with:
+
+    {% include "ai_advisor/_ai_unavailable_note.html" with fallback_note="You'll still get a plain, deterministically-ranked list below." %}
+
+`fallback_note` is what still works without the API key, and differs per
+page, so it is a required parameter rather than baked in.
+
+PROMPT 9: all three AI pages opened with the same alert, in which a grey
+badge ("Gemini API key not configured") sat inline with body text -- a badge
+labels a state on a thing, it is not a heading for a paragraph, and running
+it into the next sentence read as one broken sentence. It is now an ordinary
+alert with an icon and a lead clause, in a role="status" region so it is
+announced once rather than treated as urgent.
+{% endcomment %}
+<div class="alert alert-secondary d-flex align-items-start" role="status">
+    <i class="bi bi-plug me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <div class="small">
+        <strong>AI guidance is currently unavailable</strong> — no Gemini API key is configured.
+        {{ fallback_note }}
+    </div>
+</div>

@@ -1,0 +1,93 @@
+{% extends "base/base.html" %}
+{% block title %}{{ scholarship.title }}{% endblock %}
+{% block content %}
+<nav aria-label="Breadcrumb" class="mb-2">
+    <a href="{% url 'scholarships:list' %}" class="small">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to scholarships
+    </a>
+</nav>
+<h1 class="h3 page-title mb-1">{{ scholarship.title }}</h1>
+<p class="page-subtitle">{{ scholarship.provider.organization_name }}</p>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h6">Description</h2>
+                <p>{{ scholarship.description|linebreaksbr }}</p>
+
+                <h2 class="h6 mt-4">Eligibility Criteria</h2>
+                <ul class="list-group list-group-flush">
+                {% for criterion in scholarship.criteria.all %}
+                    <li class="list-group-item px-0">
+                        <strong>{{ criterion.get_criterion_type_display }}:</strong>
+                        {{ criterion.get_comparison_display }} {{ criterion.required_value }}
+                        {% if not criterion.is_mandatory %}<span class="chip chip-neutral ms-1">optional</span>{% endif %}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item px-0 text-muted">No criteria listed.</li>
+                {% endfor %}
+                </ul>
+
+                <h2 class="h6 mt-4">Required Documents</h2>
+                {% if scholarship.required_documents %}
+                <ul>
+                    {% for doc in scholarship.required_documents %}<li>{{ doc }}</li>{% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No documents listed.</p>
+                {% endif %}
+
+                {% if scholarship.application_instructions %}
+                <h2 class="h6 mt-4">How to Apply</h2>
+                <p>{{ scholarship.application_instructions|linebreaksbr }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">At a Glance</h2>
+                <dl class="facts-list mb-0">
+                    <dt>Award Amount</dt>
+                    <dd class="stat-value h5">৳ {{ scholarship.amount }}</dd>
+                    <dt>Deadline</dt>
+                    <dd class="mb-0">{{ scholarship.deadline|date:"M d, Y H:i" }}</dd>
+                </dl>
+            </div>
+        </div>
+        <p class="text-muted small mt-3">
+            Readiness for this scholarship is implemented in a later
+            prompt (FR-08).
+        </p>
+        {% if nav_is_student %}
+        {% comment %} PROMPT 9: these three actions are one action group, so they are
+           grouped and labelled rather than three loose controls. The
+           bookmark form keeps its `next` hidden input -- the view
+           validates it with url_has_allowed_host_and_scheme, so it must
+           stay a relative path. {% endcomment %}
+        <div class="d-grid gap-2" role="group" aria-label="Actions for this scholarship">
+            <a href="{% url 'recommendations:detail' scholarship.pk %}" class="btn btn-primary">
+                <i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>View My Match Score &amp; Eligibility
+            </a>
+            <a href="{% url 'applications:apply' scholarship.pk %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Apply to This Scholarship
+            </a>
+            <form method="post" action="{% url 'applications:toggle_bookmark' scholarship.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit" class="btn btn-outline-secondary w-100">
+                    {% if is_bookmarked %}
+                        <i class="bi bi-bookmark-dash me-1" aria-hidden="true"></i>Remove Bookmark
+                    {% else %}
+                        <i class="bi bi-bookmark-plus me-1" aria-hidden="true"></i>Bookmark This Scholarship
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

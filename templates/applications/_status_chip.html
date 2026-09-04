@@ -1,0 +1,31 @@
+{% comment %}
+Application-status chip. Include with the raw status value and its human
+label:
+
+    {% include "applications/_status_chip.html" with status=application.status label=application.get_status_display %}
+
+Why a partial: four templates (my_applications, application_detail,
+provider_detail, provider_list) all showed application status, and all
+four used the same flat `badge text-bg-secondary` -- so Approved and
+Rejected looked identical. Centralising it means the lifecycle reads the
+same everywhere and only has to be corrected in one place.
+
+Each chip pairs a color with an icon *and* the text label, so status is
+never conveyed by color alone (WCAG 1.4.1). Values come from
+ApplicationStatus in apps/common/enums.py (FR-09); the {% else %} branch
+covers `submitted` and anything added to that enum later, so a new status
+degrades to a neutral-but-labelled chip instead of vanishing.
+{% endcomment %}
+{% if status == "approved" %}
+    <span class="chip chip-success"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>{{ label }}</span>
+{% elif status == "rejected" %}
+    <span class="chip chip-danger"><i class="bi bi-x-circle-fill" aria-hidden="true"></i>{{ label }}</span>
+{% elif status == "shortlisted" %}
+    <span class="chip chip-info"><i class="bi bi-star-fill" aria-hidden="true"></i>{{ label }}</span>
+{% elif status == "under_review" %}
+    <span class="chip chip-warning"><i class="bi bi-hourglass-split" aria-hidden="true"></i>{{ label }}</span>
+{% elif status == "draft" %}
+    <span class="chip chip-neutral"><i class="bi bi-pencil" aria-hidden="true"></i>{{ label }}</span>
+{% else %}
+    <span class="chip chip-info"><i class="bi bi-send-fill" aria-hidden="true"></i>{{ label }}</span>
+{% endif %}

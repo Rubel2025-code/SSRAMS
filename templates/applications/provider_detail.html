@@ -1,0 +1,105 @@
+{% extends "base/base.html" %}
+{% block title %}Review Application — {{ application.scholarship.title }}{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: two raw-value leaks fixed here.
+   1. Status history printed the database tokens; the fields have choices,
+      so get_from_status_display / get_to_status_display give real labels.
+   2. The "Update Status" radios were labelled with the raw strings from
+      `allowed_next` (a plain list of str, so there is nothing to call
+      get_status_display on) -- see applications/_status_label.html.
+   The radio group is also now a fieldset with a legend, since a single
+   label cannot name a group of inputs. {% endcomment %}
+<nav aria-label="Breadcrumb" class="mb-2">
+    <a href="{% url 'applications:provider_list' %}" class="small">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to applications
+    </a>
+</nav>
+<h1 class="h3 page-title mb-1">{{ application.scholarship.title }}</h1>
+<p class="page-subtitle">
+    Applicant: {{ application.student.user.get_full_name|default:application.student.user.username }}
+</p>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h6 d-flex flex-wrap align-items-center gap-2">
+                    <span>Status:</span>
+                    {% include "applications/_status_chip.html" with status=application.status label=application.get_status_display %}
+                </h2>
+                {% if application.submitted_at %}
+                <p class="text-muted small mb-0">Submitted {{ application.submitted_at|date:"M d, Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Status History</h2>
+                {% if history %}
+                <ol class="list-group list-group-flush list-unstyled mb-0">
+                    {% for entry in history %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            {% if entry.from_status %}
+                                {% include "applications/_status_chip.html" with status=entry.from_status label=entry.get_from_status_display %}
+                                <i class="bi bi-arrow-right text-muted" aria-hidden="true"></i>
+                                <span class="visually-hidden">changed to</span>
+                            {% endif %}
+                            {% include "applications/_status_chip.html" with status=entry.to_status label=entry.get_to_status_display %}
+                            <span class="text-muted small">{{ entry.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        {% if entry.changed_by %}
+                        <p class="text-muted small mb-0 mt-1">Changed by {{ entry.changed_by }}</p>
+                        {% endif %}
+                        {% if entry.note %}<p class="text-muted small mb-0 mt-1">{{ entry.note }}</p>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% else %}
+                <p class="text-muted mb-0">No status changes yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Update Status</h2>
+                {% if allowed_next %}
+                <form method="post">
+                    {% csrf_token %}
+                    <fieldset class="mb-3 border-0 p-0 m-0">
+                        <legend class="form-label h6 mb-2">
+                            Move this application to
+                            <span class="required-marker" aria-hidden="true">*</span>
+                        </legend>
+                        {% for status in allowed_next %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="to_status"
+                                   value="{{ status }}" id="status_{{ status }}" required>
+                            <label class="form-check-label" for="status_{{ status }}">
+                                {% include "applications/_status_label.html" with status=status %}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </fieldset>
+                    <div class="mb-3">
+                        <label for="note" class="form-label">Note (optional)</label>
+                        <textarea name="note" id="note" class="form-control" rows="2"
+                                  aria-describedby="note_helptext"></textarea>
+                        <div class="form-text" id="note_helptext">
+                            Recorded in the status history and visible to the applicant.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                </form>
+                {% else %}
+                <p class="text-muted mb-0">This application has reached a final status.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

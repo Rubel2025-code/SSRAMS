@@ -1,0 +1,87 @@
+{% extends "base/base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: the four list-valued fields each repeated the same badge loop.
+   They are now real <ul>/<li> lists inside the <dd> -- a set of skills is a
+   list, and marking it up as one lets a screen reader say how many there
+   are instead of running them together as one long string. {% endcomment %}
+<div class="page-header">
+    <h1 class="h3 page-title mb-0">My Student Profile</h1>
+    <a href="{% url 'accounts:student_profile_edit' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit Profile
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="facts-list row mb-0">
+            <dt class="col-sm-4">University</dt>
+            <dd class="col-sm-8">{{ profile.university }}</dd>
+
+            <dt class="col-sm-4">Department</dt>
+            <dd class="col-sm-8">{{ profile.department }}</dd>
+
+            <dt class="col-sm-4">CGPA</dt>
+            <dd class="col-sm-8 stat-value">{{ profile.cgpa }}</dd>
+
+            <dt class="col-sm-4">Academic Level</dt>
+            <dd class="col-sm-8">{{ profile.academic_level }}</dd>
+
+            <dt class="col-sm-4">Family Monthly Income</dt>
+            <dd class="col-sm-8">৳ {{ profile.family_monthly_income }}</dd>
+
+            <dt class="col-sm-4">Location</dt>
+            <dd class="col-sm-8">{{ profile.location|default:"—" }}</dd>
+
+            <dt class="col-sm-4">Skills</dt>
+            <dd class="col-sm-8">
+                {% if profile.skills %}
+                <ul class="list-inline mb-0">
+                    {% for skill in profile.skills %}
+                        <li class="list-inline-item"><span class="chip chip-neutral">{{ skill }}</span></li>
+                    {% endfor %}
+                </ul>
+                {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Interests</dt>
+            <dd class="col-sm-8">
+                {% if profile.interests %}
+                <ul class="list-inline mb-0">
+                    {% for interest in profile.interests %}
+                        <li class="list-inline-item"><span class="chip chip-neutral">{{ interest }}</span></li>
+                    {% endfor %}
+                </ul>
+                {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Achievements</dt>
+            <dd class="col-sm-8">
+                {% if profile.achievements %}
+                <ul class="list-inline mb-0">
+                    {% for item in profile.achievements %}
+                        <li class="list-inline-item"><span class="chip chip-neutral">{{ item }}</span></li>
+                    {% endfor %}
+                </ul>
+                {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Extracurriculars</dt>
+            <dd class="col-sm-8 mb-0">
+                {% if profile.extracurriculars %}
+                <ul class="list-inline mb-0">
+                    {% for item in profile.extracurriculars %}
+                        <li class="list-inline-item"><span class="chip chip-neutral">{{ item }}</span></li>
+                    {% endfor %}
+                </ul>
+                {% else %}—{% endif %}
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<p class="text-muted small mt-3">
+    This profile feeds scholarship matching, eligibility checks, readiness,
+    and AI guidance once those features are implemented in later prompts.
+</p>
+{% endblock %}

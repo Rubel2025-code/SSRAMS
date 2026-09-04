@@ -1,0 +1,38 @@
+{% extends "base/base.html" %}
+{% block title %}Delete {{ scholarship.title }}{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: a destructive-confirmation page should read as one. The card
+   gets a danger border, and the consequences are itemised instead of run
+   together in the middle of a sentence, where "This also removes all of its
+   eligibility criteria and weights" was easy to skim past. {% endcomment %}
+<div class="row">
+    <div class="col-lg-7">
+        <h1 class="h3 page-title mb-3">Delete Draft Scholarship</h1>
+
+        <div class="card border-danger">
+            <div class="card-body">
+                <p class="d-flex align-items-start gap-2">
+                    <i class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 mt-1" aria-hidden="true"></i>
+                    <span>
+                        Are you sure you want to permanently delete
+                        <strong>{{ scholarship.title }}</strong>?
+                    </span>
+                </p>
+                <p class="mb-2">This also removes:</p>
+                <ul>
+                    <li>all of its eligibility criteria</li>
+                    <li>all of its criterion weights</li>
+                </ul>
+                <p><strong>This cannot be undone.</strong></p>
+                <form method="post" class="d-flex gap-2 flex-wrap">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1" aria-hidden="true"></i>Yes, Delete Permanently
+                    </button>
+                    <a href="{% url 'scholarships:provider_detail' scholarship.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

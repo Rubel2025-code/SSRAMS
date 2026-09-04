@@ -1,0 +1,27 @@
+{% comment %}
+Human label for a raw ApplicationStatus value. Include with:
+
+    {% include "applications/_status_label.html" with status=status %}
+
+USE THIS ONLY WHERE THERE IS NO MODEL INSTANCE TO ASK. Everywhere a
+model or history row is in hand, call get_status_display() instead --
+that reads the label straight off ApplicationStatus in
+apps/common/enums.py, so it cannot drift.
+
+The one place that genuinely cannot: provider_detail.html's "Update
+Status" radio group iterates `allowed_next`, which the transition service
+returns as a list of bare strings. That template was printing those
+strings directly, so a provider chose between radio buttons labelled
+"under_review" and "shortlisted".
+
+If a label in enums.py changes, this file must change with it. The
+{% else %} branch prints the raw value, so an unmapped status is visibly
+wrong rather than silently blank.
+{% endcomment %}
+{% if status == "draft" %}Draft
+{% elif status == "submitted" %}Submitted
+{% elif status == "under_review" %}Under Review
+{% elif status == "shortlisted" %}Shortlisted
+{% elif status == "approved" %}Approved
+{% elif status == "rejected" %}Rejected
+{% else %}{{ status }}{% endif %}

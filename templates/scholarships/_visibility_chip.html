@@ -1,0 +1,28 @@
+{% comment %}
+Scholarship visibility chip. Include with:
+
+    {% include "scholarships/_visibility_chip.html" with scholarship=scholarship %}
+
+Renders the lifecycle state a provider or admin needs to see -- whether a
+scholarship is live to students -- from the three booleans that decide it
+(is_active, is_published, is_expired; see Scholarship.is_visible_to_students
+in apps/scholarships/models.py).
+
+PROMPT 9: provider_list.html, admin_list.html, and provider_detail.html
+each had their own copy of this badge chain, and they had already drifted:
+two said "Draft", one said "Draft — not published"; two said "Expired",
+one said "Deadline passed". One partial, one wording.
+
+Note the expired chip is ADDITIVE, not exclusive: a scholarship can be
+published *and* past its deadline, and a provider needs to see both facts.
+{% endcomment %}
+{% if not scholarship.is_active %}
+    <span class="chip chip-neutral"><i class="bi bi-pause-circle-fill" aria-hidden="true"></i>Deactivated</span>
+{% elif scholarship.is_published %}
+    <span class="chip chip-success"><i class="bi bi-eye-fill" aria-hidden="true"></i>Published</span>
+{% else %}
+    <span class="chip chip-warning"><i class="bi bi-pencil-fill" aria-hidden="true"></i>Draft</span>
+{% endif %}
+{% if scholarship.is_expired %}
+    <span class="chip chip-danger"><i class="bi bi-slash-circle-fill" aria-hidden="true"></i>Deadline passed</span>
+{% endif %}

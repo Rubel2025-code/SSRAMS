@@ -1,0 +1,157 @@
+{% extends "base/base.html" %}
+{% block title %}Weights — {{ scholarship.title }}{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9 — three real problems on this page:
+   * Each weight <input> had no label. A column header is not a label: it
+     associates a cell with a column visually, but a screen reader moving
+     through the form announces "spin button, blank" with no idea which
+     criterion it belongs to. Each input now has a visually-hidden <label>
+     naming its criterion.
+   * The live total's only cue was a &check; / &cross; glyph, which is
+     punctuation and announces as nothing. The total is now a chip that
+     states its state in words inside a role="status" region, so the
+     recalculation is actually announced.
+   * The table was unwrapped and its inline style="width: 160px" is now the
+     .weight-col class. {% endcomment %}
+<nav aria-label="Breadcrumb" class="mb-2">
+    <a href="{% url 'scholarships:provider_detail' scholarship.pk %}" class="small">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to {{ scholarship.title }}
+    </a>
+</nav>
+<h1 class="h3 page-title mb-1">Weighting Configuration</h1>
+<p class="page-subtitle">
+    Every criterion's weight is specific to this scholarship — it has no
+    effect on any other scholarship. All weights must sum to exactly 100%
+    before this scholarship can be published.
+</p>
+
+{% if not criteria %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        No criteria defined yet.
+        <a href="{% url 'scholarships:provider_criteria' scholarship.pk %}" class="alert-link">Add criteria first</a>.
+    </span>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <form method="post" novalidate id="weight-form">
+            {% csrf_token %}
+            <div class="table-card">
+                <div class="table-responsive" tabindex="0" role="region" aria-label="Weight entry for each criterion">
+                    <table class="table align-middle mb-0">
+                        <caption class="visually-hidden">
+                            One row per criterion. Enter each weight as a
+                            percentage; the running total is shown in the last row.
+                        </caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Criterion</th>
+                                <th scope="col" class="weight-col">Weight (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for criterion in criteria %}
+                            <tr>
+                                <th scope="row" class="fw-normal">
+                                    {{ criterion.get_criterion_type_display }}
+                                    <span class="text-muted small">({{ criterion.get_comparison_display }} “{{ criterion.required_value }}”)</span>
+                                </th>
+                                <td>
+                                    <label for="weight_{{ criterion.pk }}" class="form-label visually-hidden">
+                                        Weight for {{ criterion.get_criterion_type_display }}, in percent
+                                    </label>
+                                    <div class="input-group">
+                                        <input
+                                            type="number" step="0.01" min="0" max="100"
+                                            id="weight_{{ criterion.pk }}"
+                                            name="weight_{{ criterion.pk }}"
+                                            class="form-control weight-input"
+                                            value="{% if criterion.weight %}{{ criterion.weight.weight_percent }}{% endif %}"
+                                        >
+                                        <span class="input-group-text" aria-hidden="true">%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold">
+                                <th scope="row">TOTAL</th>
+                                <td>
+                                    {% comment %} role="status" so the running total is announced
+                                       politely as it changes, not just repainted. {% endcomment %}
+                                    <span class="chip {% if validation.is_valid %}chip-success{% else %}chip-danger{% endif %}"
+                                          id="live-chip" role="status">
+                                        <i id="live-icon" aria-hidden="true"
+                                           class="bi {% if validation.is_valid %}bi-check-circle-fill{% else %}bi-exclamation-circle-fill{% endif %}"></i>
+                                        <span id="live-total">{{ validation.total }}</span>%
+                                        <span id="live-note">{% if validation.is_valid %}— valid{% else %}— must total 100%{% endif %}</span>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">
+                <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save Weights
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if not validation.is_valid and validation.issues %}
+<div class="alert alert-warning mt-3 d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <div>
+        <span class="visually-hidden">Problems with this weight configuration: </span>
+        <ul class="mb-0">
+            {% for issue in validation.issues %}<li>{{ issue }}</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+{% elif validation.is_valid %}
+<div class="alert alert-success mt-3 d-flex align-items-start" role="alert">
+    <i class="bi bi-check-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>Total is exactly 100% — this scholarship is ready to publish.</span>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Client-side live total is a convenience only — the authoritative check
+// is server-side in WeightService.validate_configuration (project brief
+// SS7: "Validation must occur server-side. Do not rely only on JavaScript.").
+document.addEventListener("DOMContentLoaded", function () {
+    var inputs = document.querySelectorAll(".weight-input");
+    var totalEl = document.getElementById("live-total");
+    var noteEl = document.getElementById("live-note");
+    var chipEl = document.getElementById("live-chip");
+    var iconEl = document.getElementById("live-icon");
+    if (!inputs.length || !totalEl || !noteEl || !chipEl || !iconEl) { return; }
+
+    function recalc() {
+        var total = 0;
+        inputs.forEach(function (input) {
+            var value = parseFloat(input.value);
+            if (!isNaN(value)) { total += value; }
+        });
+        var valid = Math.abs(total - 100) < 0.001;
+        totalEl.textContent = total.toFixed(2);
+        // Words, not a glyph: this is the only feedback a screen-reader user
+        // gets from the running total, and role="status" announces it.
+        noteEl.textContent = valid ? "— valid" : "— must total 100%";
+        chipEl.className = "chip " + (valid ? "chip-success" : "chip-danger");
+        iconEl.className = "bi " + (valid ? "bi-check-circle-fill" : "bi-exclamation-circle-fill");
+    }
+
+    inputs.forEach(function (input) {
+        input.addEventListener("input", recalc);
+    });
+});
+</script>
+{% endblock %}

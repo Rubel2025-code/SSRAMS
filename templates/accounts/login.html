@@ -1,0 +1,38 @@
+{% extends "base/base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: the two fields were hand-written and rendered no field errors
+   at all -- {{ form.username.errors }} was never output, so a per-field
+   validation message (e.g. "This field is required") was silently dropped
+   and the form appeared to do nothing. Routing both fields through the
+   shared partial fixes that and gives them the same error markup, ARIA
+   wiring, and required marker as every other form in the app. {% endcomment %}
+<div class="row justify-content-center">
+    <div class="col-sm-10 col-md-7 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3 text-center">Sign in to Smart Scholarship Management</h1>
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger d-flex align-items-start" role="alert">
+                        <i class="bi bi-x-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                        <div><span class="visually-hidden">Error: </span>{{ form.non_field_errors }}</div>
+                    </div>
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include "accounts/_form_fields.html" %}
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Log In
+                    </button>
+                </form>
+
+                <p class="text-center mt-3 mb-0">
+                    New here? <a href="{% url 'accounts:register_choice' %}">Create an account</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

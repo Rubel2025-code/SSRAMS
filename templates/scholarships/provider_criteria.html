@@ -1,0 +1,114 @@
+{% extends "base/base.html" %}
+{% block title %}Criteria — {{ scholarship.title }}{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9: the table was unwrapped and its four columns (one holding two
+   buttons) overflowed on a phone; it is now a scrollable, focusable region.
+   The two-button action cell also stacks instead of overlapping at narrow
+   widths. {% endcomment %}
+<nav aria-label="Breadcrumb" class="mb-2">
+    <a href="{% url 'scholarships:provider_detail' scholarship.pk %}" class="small">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to {{ scholarship.title }}
+    </a>
+</nav>
+<h1 class="h3 page-title mb-1">Eligibility Criteria</h1>
+<p class="page-subtitle">{{ scholarship.title }}</p>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Current Criteria</h2>
+                {% if criteria %}
+                <div class="table-card mt-2">
+                    <div class="table-responsive" tabindex="0" role="region" aria-label="Current eligibility criteria">
+                        <table class="table table-sm align-middle mb-0">
+                            <caption class="visually-hidden">
+                                Every criterion on this scholarship, the rule it
+                                applies, and its weight.
+                            </caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Rule</th>
+                                    <th scope="col">Weight</th>
+                                    <th scope="col" class="text-end"><span class="visually-hidden">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for criterion in criteria %}
+                                <tr>
+                                    <th scope="row" class="fw-normal">
+                                        {{ criterion.get_criterion_type_display }}
+                                        {% if not criterion.is_mandatory %}<span class="chip chip-neutral ms-1">optional</span>{% endif %}
+                                    </th>
+                                    <td>{{ criterion.get_comparison_display }} “{{ criterion.required_value }}”</td>
+                                    <td>
+                                        {% if criterion.weight %}
+                                            {{ criterion.weight.weight_percent }}%
+                                        {% else %}
+                                            <span class="chip chip-danger">
+                                                <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>unset
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex flex-wrap gap-1 justify-content-end">
+                                            <a href="{% url 'scholarships:provider_criterion_edit' scholarship.pk criterion.pk %}" class="btn btn-sm btn-outline-secondary">
+                                                Edit<span class="visually-hidden"> {{ criterion.get_criterion_type_display }} criterion</span>
+                                            </a>
+                                            {% comment %} The confirm() dialog is the only guard against an
+                                               accidental destructive POST here, so it stays. {% endcomment %}
+                                            <form method="post" action="{% url 'scholarships:provider_criterion_delete' scholarship.pk criterion.pk %}" class="d-inline" onsubmit="return confirm('Remove this criterion?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Remove<span class="visually-hidden"> {{ criterion.get_criterion_type_display }} criterion</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-sliders empty-icon" aria-hidden="true"></i>
+                    <p class="empty-note mb-0">
+                        No criteria defined yet. Use the “Add a Criterion”
+                        form to define the first one.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Add a Criterion</h2>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger d-flex align-items-start" role="alert">
+                            <i class="bi bi-x-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                            <div><span class="visually-hidden">Error: </span>{{ form.non_field_errors }}</div>
+                        </div>
+                    {% endif %}
+                    {% include "accounts/_form_fields.html" %}
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add Criterion
+                    </button>
+                </form>
+            </div>
+        </div>
+        <p class="text-muted small mt-3">
+            After adding criteria, set their weights on the
+            <a href="{% url 'scholarships:provider_weights' scholarship.pk %}">Weights</a> page — all
+            weights must sum to exactly 100% before this scholarship can be published.
+        </p>
+    </div>
+</div>
+{% endblock %}

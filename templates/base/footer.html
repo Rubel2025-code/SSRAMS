@@ -1,0 +1,18 @@
+{% comment %}
+Site footer. Uses semantic <footer> as the page contentinfo landmark
+(implicit role, since it is a direct child of <body>).
+
+PROMPT 9: the bg-light utility was removed because it is a fixed light
+color and left the footer glaringly white in dark mode; base.css now
+themes footer via the surface token instead.
+{% endcomment %}
+<footer class="mt-5 py-4">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 text-center text-md-start small">
+        <p class="mb-0">
+            &copy; {% now "Y" %} {{ site_name }} — {{ site_tagline }}
+        </p>
+        <p class="mb-0">
+            IUBAT — International University of Business Agriculture and Technology
+        </p>
+    </div>
+</footer>

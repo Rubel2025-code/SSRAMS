@@ -1,0 +1,146 @@
+{% extends "base/base.html" %}
+{% block title %}Review {{ provider_profile.organization_name }}{% endblock %}
+{% block content %}
+{% comment %} PROMPT 9 — the decision radios were the significant problem here: three
+   loose radio inputs with no fieldset and no legend, so the group had no
+   accessible name. A screen reader announced "Approved, radio button, 1 of
+   3" with no indication of what was being decided. The group is now a
+   <fieldset> with the field's own label as its <legend>, and its error list
+   is wired up with aria-describedby (Django does not emit that itself when
+   the radios are looped over by hand). {% endcomment %}
+<nav aria-label="Breadcrumb" class="mb-2">
+    <a href="{% url 'accounts:admin_verification_list' %}" class="small">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to verification list
+    </a>
+</nav>
+<h1 class="h3 page-title mb-2">{{ provider_profile.organization_name }}</h1>
+<div class="d-flex flex-wrap gap-1 mb-3">
+    {% include "accounts/_verification_chip.html" with profile=provider_profile %}
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h6">Organization Details</h2>
+                <dl class="facts-list row mb-0">
+                    <dt class="col-sm-4">Type</dt>
+                    <dd class="col-sm-8">{{ provider_profile.organization_type|default:"—" }}</dd>
+                    <dt class="col-sm-4">Contact Email</dt>
+                    <dd class="col-sm-8">{{ provider_profile.contact_email }}</dd>
+                    <dt class="col-sm-4">Contact Phone</dt>
+                    <dd class="col-sm-8">{{ provider_profile.contact_phone|default:"—" }}</dd>
+                    <dt class="col-sm-4">Website</dt>
+                    <dd class="col-sm-8">{{ provider_profile.website|default:"—" }}</dd>
+                    <dt class="col-sm-4">Description</dt>
+                    <dd class="col-sm-8 mb-0">{{ provider_profile.description|default:"—" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        {% if latest_submission %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h6">Latest Verification Submission</h2>
+                <p class="mb-1"><strong>Submitted evidence note:</strong></p>
+                <p class="text-muted">{{ latest_submission.submitted_documents_note|default:"None provided." }}</p>
+                <p class="mb-0"><strong>Current status:</strong>
+                    <span class="chip chip-neutral">{{ latest_submission.get_status_display }}</span>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Verification History</h2>
+                {% if history %}
+                <ul class="list-group list-group-flush">
+                    {% for entry in history %}
+                    <li class="list-group-item px-0">
+                        <span class="chip chip-neutral">{{ entry.get_status_display }}</span>
+                        {{ entry.created_at|date:"M d, Y H:i" }}
+                        {% if entry.decided_by %} — decided by {{ entry.decided_by }}{% endif %}
+                        {% if entry.decision_note %}<div class="text-muted small">{{ entry.decision_note }}</div>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No verification history yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6">Decision</h2>
+                {% if provider_profile.verification_status == "pending" %}
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger d-flex align-items-start" role="alert">
+                            <i class="bi bi-x-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                            <div><span class="visually-hidden">Error: </span>{{ form.non_field_errors }}</div>
+                        </div>
+                    {% endif %}
+                    <fieldset class="mb-3 border-0 p-0 m-0"
+                              {% if form.decision.errors %}aria-describedby="{{ form.decision.auto_id }}_error"{% endif %}>
+                        <legend class="form-label h6 mb-2">
+                            {{ form.decision.label }}<span class="required-marker" aria-hidden="true">*</span>
+                        </legend>
+                        {% for radio in form.decision %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                            </div>
+                        {% endfor %}
+                        {% if form.decision.errors %}
+                            <div id="{{ form.decision.auto_id }}_error">
+                                {% for error in form.decision.errors %}
+                                    <p class="field-error mb-0">
+                                        <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                                        <span><span class="visually-hidden">Error: </span>{{ error }}</span>
+                                    </p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </fieldset>
+                    <div class="mb-3">
+                        {% comment %} "(optional)" stays inside the <label> rather than
+                           moving to a form-text hint: the form field has no
+                           help_text server-side, so Django emits no
+                           aria-describedby for it and a hint div would not be
+                           associated with the textarea. {% endcomment %}
+                        <label for="{{ form.decision_note.id_for_label }}" class="form-label">Note (optional)</label>
+                        {{ form.decision_note }}
+                        <div class="form-text">
+                            Stored with the decision and shown in the
+                            verification history above.
+                        </div>
+                        {% if form.decision_note.errors %}
+                            <div id="{{ form.decision_note.auto_id }}_error">
+                                {% for error in form.decision_note.errors %}
+                                    <p class="field-error mb-0">
+                                        <i class="bi bi-exclamation-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                                        <span><span class="visually-hidden">Error: </span>{{ error }}</span>
+                                    </p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit Decision</button>
+                </form>
+                {% else %}
+                <p class="text-muted">
+                    This provider has already been
+                    <strong>{{ provider_profile.get_verification_status_display }}</strong>.
+                    No further action is needed.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

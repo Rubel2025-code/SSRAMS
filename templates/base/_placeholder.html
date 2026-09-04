@@ -1,0 +1,31 @@
+{% comment %}
+Shared empty-state body, included by a page that already owns its <h1>.
+Context variables (all set by the including template, never by a view):
+  - placeholder_title:    short heading, e.g. "No applications yet"
+  - placeholder_note:     one line explaining the state
+  - placeholder_cta_url:  optional; when given, renders a next-step button
+  - placeholder_cta_label: label for that button (required with the url)
+
+PROMPT 9: rebuilt on the shared .empty-state component so placeholders,
+empty lists, and empty tables all look like the same thing. The icon is
+decorative (the heading already says what this is), so it is aria-hidden.
+
+The heading is an <h2>: both call sites are the empty branch of a page
+whose <h1> is already on screen, so the <h1> this partial used to emit was
+a second top-level heading with the same text as the first. The optional
+CTA was added because an empty state that only states the absence leaves
+the user with nowhere to go -- matching the empty states in
+recommendations/my_recommendations.html and top_opportunities.html.
+{% endcomment %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-cone-striped empty-icon" aria-hidden="true"></i>
+        <h2 class="h5 empty-title">{{ placeholder_title }}</h2>
+        <p class="empty-note{% if not placeholder_cta_url %} mb-0{% endif %}">{{ placeholder_note }}</p>
+        {% if placeholder_cta_url %}
+            <a href="{{ placeholder_cta_url }}" class="btn btn-sm btn-outline-primary">
+                {{ placeholder_cta_label }}
+            </a>
+        {% endif %}
+    </div>
+</div>

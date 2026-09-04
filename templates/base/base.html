@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+{% comment %}
+Master layout for every page in SSRAMS.
+
+PROMPT 9 (UI/UX) NOTES — what was added here and why:
+  - Skip link + id="main-content": WCAG 2.4.1. The student navbar carries
+    ten links; without a bypass, every keyboard/screen-reader user walks
+    all of them on every page before reaching content.
+  - Theme bootstrap script in <head>: sets data-bs-theme *before first
+    paint* so a dark-mode user never sees a white flash. It must stay
+    inline and stay in <head> -- moving it to a static file or to the end
+    of <body> reintroduces the flash.
+  - Messages: the old markup emitted class="alert-error" for error-level
+    messages, which is not a Bootstrap class, so errors rendered
+    unstyled. Django's tags are debug/info/success/warning/error;
+    Bootstrap's are ...-danger/-secondary. The mapping below fixes that.
+  - Each alert now carries an icon as well as a color, so severity is not
+    communicated by color alone (WCAG 1.4.1).
+
+Blocks available to child templates:
+  title, meta_description, body_class, extra_head, content, extra_scripts
+{% endcomment %}
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_name }}{% endblock %} — {{ site_tagline }}</title>
+    <meta name="description" content="{% block meta_description %}{{ site_name }} — {{ site_tagline }}. Scholarship discovery, eligibility checking, and application management for IUBAT students.{% endblock %}">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#12293e">
+
+    {% comment %} Restore the visitor's saved theme before the first paint. Falls back
+       to the OS preference when they have never chosen one. {% endcomment %}
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem("ssrams-theme");
+                var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                document.documentElement.setAttribute(
+                    "data-bs-theme", saved || (prefersDark ? "dark" : "light")
+                );
+            } catch (e) {
+                /* localStorage can throw in private mode; light is a safe default. */
+            }
+        })();
+    </script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{% static 'css/base.css' %}" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<!-- Global Animated Background -->
+<div class="global-bg" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+    <div class="bg-particles">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    {% include "base/navbar.html" %}
+
+    <main class="container py-4" id="main-content">
+        {% if messages %}
+            <div class="messages" role="region" aria-label="Notifications">
+                {% for message in messages %}
+                    {% if message.level_tag == "error" %}
+                        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-start" role="alert">
+                            <i class="bi bi-exclamation-octagon-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                            <div><span class="visually-hidden">Error: </span>{{ message }}</div>
+                    {% elif message.level_tag == "warning" %}
+                        <div class="alert alert-warning alert-dismissible fade show d-flex align-items-start" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                            <div><span class="visually-hidden">Warning: </span>{{ message }}</div>
+                    {% elif message.level_tag == "success" %}
+                        <div class="alert alert-success alert-dismissible fade show d-flex align-items-start" role="status">
+                            <i class="bi bi-check-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                            <div><span class="visually-hidden">Success: </span>{{ message }}</div>
+                    {% elif message.level_tag == "debug" %}
+                        <div class="alert alert-secondary alert-dismissible fade show d-flex align-items-start" role="status">
+                            <i class="bi bi-bug-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                            <div>{{ message }}</div>
+                    {% else %}
+                        <div class="alert alert-info alert-dismissible fade show d-flex align-items-start" role="status">
+                            <i class="bi bi-info-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                            <div>{{ message }}</div>
+                    {% endif %}
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Dismiss this notification"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "base/footer.html" %}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme toggle. Progressive enhancement only: with JS disabled the
+        // button stays hidden by the [hidden] attribute it ships with, and
+        // the page stays on the light theme <html> declares -- the OS
+        // preference is read by the head script above, not by CSS, so that
+        // the dark palette lives in exactly one place (see base.css).
+        (function () {
+            var toggle = document.getElementById("themeToggle");
+            if (!toggle) { return; }
+            toggle.hidden = false;
+
+            function render(theme) {
+                document.documentElement.setAttribute("data-bs-theme", theme);
+                var dark = theme === "dark";
+                toggle.setAttribute("aria-pressed", dark ? "true" : "false");
+                toggle.querySelector("i").className = dark ? "bi bi-sun-fill" : "bi bi-moon-stars-fill";
+                toggle.querySelector(".theme-label").textContent =
+                    dark ? "Switch to light theme" : "Switch to dark theme";
+            }
+
+            render(document.documentElement.getAttribute("data-bs-theme") || "light");
+
+            toggle.addEventListener("click", function () {
+                var next = document.documentElement.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+                render(next);
+                try { localStorage.setItem("ssrams-theme", next); } catch (e) { /* private mode */ }
+            });
+        })();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

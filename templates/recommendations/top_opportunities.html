@@ -1,0 +1,112 @@
+{% extends "base/base.html" %}
+{% block title %}Top Opportunities{% endblock %}
+{% block content %}
+<h1 class="h3 page-title mb-1">Top Opportunities</h1>
+<p class="page-subtitle mb-4">
+    Ranked using your Match Score, eligibility, readiness, and deadline —
+    computed for your profile only.
+</p>
+
+{% if profile_missing %}
+{% comment %} See my_recommendations.html: `profile_missing` means the StudentProfile row
+   is absent, and accounts:student_profile bounces straight back to the
+   dashboard in that case, so there is nowhere useful to link. {% endcomment %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+    <span>
+        Your student profile could not be found, so Top Opportunities cannot
+        be calculated. Please contact support.
+    </span>
+</div>
+{% elif not opportunities %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-binoculars empty-icon" aria-hidden="true"></i>
+        <h2 class="h5 empty-title">No opportunities to rank yet</h2>
+        <p class="empty-note">
+            No currently published, active scholarships with a valid weight
+            configuration and a meaningful match are available right now.
+        </p>
+        <a href="{% url 'scholarships:list' %}" class="btn btn-sm btn-outline-primary">Browse scholarships</a>
+    </div>
+</div>
+{% else %}
+{% comment %} PROMPT 9 — the notable fix on this page: the {% else %} branch of the
+   eligibility badge printed `entry.eligibility_status` raw, so a student
+   whose profile fell short was shown the database token "not_eligible"
+   (and "missing_info") instead of a sentence. entry is a DeadlineEntry
+   dataclass whose eligibility_status is a bare str, so there is no
+   get_*_display() to call -- hence _eligibility_chip.html.
+
+   Also: the deadline tile said "Urgent"/"Soon" in red/amber with no other
+   cue, and the three metric tiles were fixed col-4 which crushed them
+   below ~360px (base.css .metric-strip reflows them to 2-then-1). {% endcomment %}
+<ol class="row g-3 list-unstyled" aria-label="Your opportunities, highest priority first">
+    {% for entry in opportunities %}
+    <li class="col-md-6">
+        <div class="card card-linked h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <h2 class="h6 mb-0">
+                        <span class="text-muted me-1">{{ forloop.counter }}.</span>{{ entry.scholarship.title }}
+                    </h2>
+                    {% if entry.eligibility_status == "eligible" %}
+                        <span class="chip chip-success flex-shrink-0"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Eligible</span>
+                    {% elif entry.is_near_eligible %}
+                        <span class="chip chip-info flex-shrink-0"><i class="bi bi-arrow-up-right-circle-fill" aria-hidden="true"></i>Near-Eligible</span>
+                    {% else %}
+                        <span class="flex-shrink-0">
+                            {% include "recommendations/_eligibility_chip.html" with status=entry.eligibility_status %}
+                        </span>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-3">{{ entry.scholarship.provider.organization_name }}</p>
+
+                <div class="row metric-strip text-center g-2 mb-3">
+                    <div class="col-4">
+                        <div class="stat-value">{{ entry.match_score_percent }}%</div>
+                        <div class="text-muted small">Match</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-value">{{ entry.readiness_percent }}%</div>
+                        <div class="text-muted small">Ready</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-value">
+                            {% if entry.days_remaining < 0 %}
+                                Passed
+                            {% elif entry.days_remaining == 0 %}
+                                Today
+                            {% else %}
+                                {{ entry.days_remaining }}d
+                            {% endif %}
+                        </div>
+                        <div class="small">
+                            {% if entry.urgency == "critical" or entry.urgency == "due_today" %}
+                                <span class="text-danger fw-semibold">
+                                    <i class="bi bi-alarm-fill" aria-hidden="true"></i> Urgent
+                                </span>
+                            {% elif entry.urgency == "urgent" %}
+                                <span class="text-warning-emphasis fw-semibold">
+                                    <i class="bi bi-hourglass-split" aria-hidden="true"></i> Soon
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Deadline</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto">
+                    <p class="small mb-2"><strong>Recommended:</strong> {{ entry.recommended_action }}</p>
+                    <a href="{% url 'recommendations:detail' entry.scholarship.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                        View Details<span class="visually-hidden"> for {{ entry.scholarship.title }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ol>
+{% endif %}
+{% endblock %}

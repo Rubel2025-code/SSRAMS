@@ -1,0 +1,30 @@
+{% comment %}
+Human label for a raw ScholarshipCriterion.CriterionType value. Include
+with:
+
+    {% include "scholarships/_criterion_type_label.html" with criterion_type=key %}
+
+USE THIS ONLY WHERE THERE IS NO MODEL INSTANCE TO ASK -- everywhere a
+ScholarshipCriterion is in hand, call get_criterion_type_display().
+
+The one place that cannot: RecommendationResult.breakdown is a JSONField
+whose keys are the bare criterion_type strings
+(recommendation_service.py builds them with
+`key = evaluation.criterion.criterion_type`). A JSON key is not a model
+field, so recommendation_detail.html's Match Score table was printing
+"academic_level" and "cgpa" at students.
+
+Labels mirror CriterionType in apps/scholarships/models.py; if they change
+there, change them here. The {% else %} branch title-cases the raw key, so
+an unmapped type reads as "Some_New_Thing" -- obviously unfinished rather
+than silently blank.
+{% endcomment %}
+{% if criterion_type == "cgpa" %}CGPA
+{% elif criterion_type == "department" %}Department
+{% elif criterion_type == "academic_level" %}Academic Level
+{% elif criterion_type == "income" %}Family Income
+{% elif criterion_type == "location" %}Location
+{% elif criterion_type == "skills" %}Skills
+{% elif criterion_type == "documents" %}Required Documents
+{% elif criterion_type == "other" %}Other
+{% else %}{{ criterion_type|title }}{% endif %}

@@ -1,0 +1,86 @@
+{% extends "base/base.html" %}
+{% block title %}All Scholarships (Admin){% endblock %}
+{% block content %}
+<h1 class="h3 page-title mb-3">All Scholarships</h1>
+
+{% comment %} PROMPT 9: the search box had no label at all -- a placeholder is not a
+   label; it disappears the moment you type and is not reliably announced.
+   The visually-hidden label keeps the layout identical and makes the field
+   nameable. {% endcomment %}
+<form method="get" class="row g-2 mb-4" role="search">
+    <div class="col-sm-8 col-md-6">
+        <label for="admin-scholarship-search" class="form-label visually-hidden">Search all scholarships</label>
+        <input type="search" name="q" id="admin-scholarship-search" value="{{ query }}"
+               class="form-control" placeholder="Search by title or organization"
+               aria-describedby="admin-scholarship-search-help">
+        <div id="admin-scholarship-search-help" class="form-text">
+            Matches scholarship titles and provider organization names.
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-search me-1" aria-hidden="true"></i>Search
+        </button>
+    </div>
+</form>
+
+{% if scholarships %}
+<div class="table-card">
+    <div class="table-responsive" tabindex="0" role="region" aria-label="All scholarships">
+        <table class="table align-middle mb-0">
+            <caption class="visually-hidden">
+                Every scholarship in the system across all providers, with its
+                publication status.
+            </caption>
+            <thead>
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Provider</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Deadline</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for scholarship in scholarships %}
+                <tr>
+                    <th scope="row" class="fw-normal">{{ scholarship.title }}</th>
+                    <td>{{ scholarship.provider.organization_name }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% include "scholarships/_visibility_chip.html" with scholarship=scholarship %}
+                        </div>
+                    </td>
+                    <td>{{ scholarship.deadline|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'scholarships:admin_detail' scholarship.pk %}" class="btn btn-sm btn-outline-primary">
+                            Inspect<span class="visually-hidden"> {{ scholarship.title }}</span>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body empty-state">
+        <i class="bi bi-inbox empty-icon" aria-hidden="true"></i>
+        <h2 class="h5 empty-title">Nothing to show</h2>
+        <p class="empty-note">
+            {% if query %}
+                No scholarship matches “{{ query }}”.
+            {% else %}
+                No scholarships have been created in the system yet.
+            {% endif %}
+        </p>
+        {% if query %}
+        {% comment %} scholarships:list is the role-branching view that renders this
+           template for admins -- there is no separate admin_list route. {% endcomment %}
+        <a href="{% url 'scholarships:list' %}" class="btn btn-sm btn-outline-primary">Clear search</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

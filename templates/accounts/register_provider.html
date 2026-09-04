@@ -1,0 +1,33 @@
+{% extends "base/base.html" %}
+{% block title %}Provider Registration{% endblock %}
+{% block content %}
+{# PROMPT 9: same missing form.non_field_errors block as the student form. #}
+<div class="row justify-content-center">
+    <div class="col-sm-10 col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Register as a Scholarship Provider</h1>
+                <p class="text-muted small">
+                    Your account will be created immediately, but publishing
+                    scholarships requires administrator verification first (FR-03).
+                    You'll see your verification status on your dashboard.
+                </p>
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger d-flex align-items-start" role="alert">
+                        <i class="bi bi-x-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                        <div><span class="visually-hidden">Error: </span>{{ form.non_field_errors }}</div>
+                    </div>
+                {% endif %}
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include "accounts/_form_fields.html" %}
+                    <button type="submit" class="btn btn-primary w-100">Create Provider Account</button>
+                </form>
+                <p class="text-center mt-3 mb-0">
+                    Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% comment %}
+Deadline-urgency chip (FR-14). Include with:
+
+    {% include "recommendations/_deadline_chip.html" with urgency=urgency days_remaining=days_remaining %}
+
+Values are the DeadlineUrgency constants in
+apps/recommendations/services/deadline_service.py:
+    expired / due_today / critical / urgent / approaching / upcoming
+They are plain strings, not a TextChoices, because urgency is derived at
+read time rather than stored -- so there is no get_*_display() to call and
+the mapping has to live in a template.
+
+Every branch spells out the time remaining in words as well as color, and
+carries a distinct icon, so "2 days left" is never a red pixel alone
+(WCAG 1.4.1). recommendation_detail.html previously did this inline with
+Bootstrap badges, several of which put white text on a saturated fill
+below the 4.5:1 contrast floor.
+{% endcomment %}
+{% if urgency == "expired" %}
+    <span class="chip chip-neutral"><i class="bi bi-slash-circle" aria-hidden="true"></i>Deadline passed</span>
+{% elif urgency == "due_today" %}
+    <span class="chip chip-danger"><i class="bi bi-alarm-fill" aria-hidden="true"></i>Due today</span>
+{% elif urgency == "critical" %}
+    <span class="chip chip-danger"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Critical — {{ days_remaining }} day{{ days_remaining|pluralize }} left</span>
+{% elif urgency == "urgent" %}
+    <span class="chip chip-warning"><i class="bi bi-hourglass-split" aria-hidden="true"></i>Urgent — {{ days_remaining }} day{{ days_remaining|pluralize }} left</span>
+{% elif urgency == "approaching" %}
+    <span class="chip chip-info"><i class="bi bi-calendar-event" aria-hidden="true"></i>Approaching — {{ days_remaining }} day{{ days_remaining|pluralize }} left</span>
+{% else %}
+    <span class="chip chip-neutral"><i class="bi bi-calendar3" aria-hidden="true"></i>Upcoming — {{ days_remaining }} day{{ days_remaining|pluralize }} left</span>
+{% endif %}
