@@ -268,7 +268,24 @@ h1, .h1, h2, .h2, h3, .h3 {
  * ===================================================================== */
 
 /* --- Navbar ---------------------------------------------------------- */
+/* =========================================================
+   NAVBAR DROPDOWN STACKING FIX
+   ========================================================= */
 
+.ssrams-navbar {
+    position: relative;
+    z-index: 1030;
+}
+
+.ssrams-navbar .dropdown-menu {
+    position: absolute;
+    z-index: 1050;
+}
+
+.ssrams-navbar .dropdown {
+    position: relative;
+    z-index: 1050;
+}
 .ssrams-navbar {
     background-color: var(--ssrams-primary-dark);
     box-shadow: var(--ssrams-shadow-sm);
