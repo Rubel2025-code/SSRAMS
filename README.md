@@ -599,7 +599,7 @@ This project was developed as an academic software project. Add the appropriate 
 Add project members and their roles here.
 
 ```text
-Name — Role
-Name — Role
-Name — Role
+1.Name — Sumaiya707 
+2.Name — Mahedi-31 
+3.Name — rabeya27
 ```
