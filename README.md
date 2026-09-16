@@ -4,9 +4,9 @@
 
 A Django-based scholarship management platform with student profiles, scholarship publishing, eligibility checking, recommendation, application tracking, and an AI-powered advisor.
 
-**Institution:** IUBAT  
-**Project:** SSRAMS v3.1  
-**Updated:** August 2026
+*Institution:* IUBAT  CSE
+*Project:* SSRAMS v3.1  
+*Updated:* August 2026
 
 ---
 
@@ -154,70 +154,70 @@ Important actions are recorded through the audit system, including authenticatio
 
 Clone the repository and enter the project directory:
 
-```bash
+bash
 git clone <repository-url>
 cd ssrams
-```
+
 
 Create a virtual environment:
 
-```bash
+bash
 python3 -m venv venv
-```
+
 
 Activate it.
 
-**Windows:**
+*Windows:*
 
-```bash
+bash
 venv\Scripts\activate
-```
 
-**Linux/macOS:**
 
-```bash
+*Linux/macOS:*
+
+bash
 source venv/bin/activate
-```
+
 
 Install the dependencies:
 
-```bash
+bash
 pip install -r requirements.txt
-```
+
 
 Create the local environment file:
 
-```bash
+bash
 cp .env.example .env
-```
 
-On Windows, copy `.env.example` to `.env` manually if the `cp` command is not available.
 
-Update `.env` with the required settings.
+On Windows, copy .env.example to .env manually if the cp command is not available.
+
+Update .env with the required settings.
 
 Apply the migrations:
 
-```bash
+bash
 python manage.py migrate
-```
+
 
 Create an administrator account:
 
-```bash
+bash
 python manage.py createsuperuser
-```
+
 
 Run the development server:
 
-```bash
+bash
 python manage.py runserver
-```
+
 
 Open:
 
-```text
+text
 http://127.0.0.1:8000/
-```
+
 
 ---
 
@@ -227,22 +227,22 @@ http://127.0.0.1:8000/
 
 SQL Server is the intended database for the project.
 
-The project uses the `mssql-django` backend and ODBC Driver 18 for SQL Server.
+The project uses the mssql-django backend and ODBC Driver 18 for SQL Server.
 
-Set the following values in `.env`:
+Set the following values in .env:
 
-```env
+env
 DB_ENGINE=mssql
 
-DB_NAME=your_database_name
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-DB_HOST=your_database_host
+DB_NAME=database_name
+DB_USER=database_user
+DB_PASSWORD=database_password
+DB_HOST=database_host
 DB_PORT=1433
 
 DB_DRIVER=ODBC Driver 18 for SQL Server
 DB_EXTRA_PARAMS=TrustServerCertificate=yes;Encrypt=yes
-```
+
 
 Make sure SQL Server and the required ODBC driver are installed and accessible from the machine running the application.
 
@@ -250,15 +250,15 @@ Make sure SQL Server and the required ODBC driver are installed and accessible f
 
 For local development and testing when SQL Server is not available, the project includes a SQLite fallback:
 
-```env
+env
 DB_ENGINE=sqlite_dev_fallback
-```
+
 
 This uses:
 
-```text
+text
 dev_fallback.sqlite3
-```
+
 
 The SQLite option is intended mainly for development and testing. The production deployment should use a persistent database rather than relying on a temporary SQLite filesystem.
 
@@ -270,7 +270,7 @@ Sensitive configuration is loaded from environment variables rather than being h
 
 Important variables include:
 
-```env
+ .env
 DJANGO_SECRET_KEY=
 DJANGO_DEBUG=
 DJANGO_ALLOWED_HOSTS=
@@ -288,13 +288,13 @@ DB_EXTRA_PARAMS=
 GEMINI_API_KEY=
 GEMINI_MODEL_NAME=
 GEMINI_TIMEOUT_SECONDS=
-```
+
 
 ### Security
 
-Do not commit a real `.env` file or any secret keys to the repository.
+Do not commit a real .env file or any secret keys to the repository.
 
-The repository should contain `.env.example` with placeholder values instead.
+The repository should contain .env.example with placeholder values instead.
 
 ---
 
@@ -304,7 +304,7 @@ The project separates presentation, business logic, and data access through Djan
 
 ### General Flow
 
-```text
+text
 Student Profile
       |
       v
@@ -328,7 +328,7 @@ Match Score          Eligibility          Gap Analysis
                           |
                           v
                     AI Advisor
-```
+
 
 The AI layer receives prepared facts from the application. It does not directly access the database or replace the deterministic recommendation and eligibility calculations.
 
@@ -338,20 +338,20 @@ Views are kept relatively small. They handle requests and responses while applic
 
 Examples include:
 
-- `ScholarshipService`
-- `CriteriaService`
-- `WeightService`
-- `PublicationService`
-- `CriterionEvaluationService`
-- `RecommendationService`
-- `EligibilityService`
-- `GapService`
-- `ReadinessService`
-- `DeadlineService`
-- `ApplicationService`
-- `FactsBundleService`
-- `GeminiService`
-- `AIAdvisorService`
+- ScholarshipService
+- CriteriaService
+- WeightService
+- PublicationService
+- CriterionEvaluationService
+- RecommendationService
+- EligibilityService
+- GapService
+- ReadinessService
+- DeadlineService
+- ApplicationService
+- FactsBundleService
+- GeminiService
+- AIAdvisorService
 
 ---
 
@@ -359,14 +359,14 @@ Examples include:
 
 | App | Responsibility |
 |---|---|
-| `apps.common` | Shared enums, RBAC utilities, middleware, and common models |
-| `apps.accounts` | Authentication, users, roles, profiles, provider verification |
-| `apps.scholarships` | Scholarship management, criteria, and weights |
-| `apps.recommendations` | Match scores, eligibility, gaps, readiness, deadlines, opportunities |
-| `apps.applications` | Applications, status history, provider review, bookmarks |
-| `apps.ai_advisor` | Facts Bundle, Gemini integration, AI advisor features |
-| `apps.dashboard` | Role-based dashboard composition |
-| `apps.audit` | Audit logging |
+| apps.common | Shared enums, RBAC utilities, middleware, and common models |
+| apps.accounts | Authentication, users, roles, profiles, provider verification |
+| apps.scholarships | Scholarship management, criteria, and weights |
+| apps.recommendations | Match scores, eligibility, gaps, readiness, deadlines, opportunities |
+| apps.applications | Applications, status history, provider review, bookmarks |
+| apps.ai_advisor | Facts Bundle, Gemini integration, AI advisor features |
+| apps.dashboard | Role-based dashboard composition |
+| apps.audit | Audit logging |
 
 ---
 
@@ -374,7 +374,7 @@ Examples include:
 
 The main relationships are structured around users, scholarships, recommendations, and applications.
 
-```text
+text
 User
 ├── StudentProfile
 │   ├── RecommendationResult
@@ -397,7 +397,7 @@ User
 
 AuditLog
 └── Records important actions performed across the system
-```
+
 
 Each scholarship has its own criterion weights. This allows different scholarships to assign different importance to criteria such as CGPA, academic level, income, location, or other requirements.
 
@@ -409,7 +409,7 @@ The AI Advisor uses Google's Gemini API to provide guidance based on information
 
 The process is:
 
-```text
+text
 Student / Scholarship Data
           |
           v
@@ -423,7 +423,7 @@ Gemini API
           |
           v
 AI Guidance
-```
+
 
 The AI service is intentionally separated from the application's database models.
 
@@ -469,13 +469,13 @@ The project includes tests for the main application modules.
 
 Run the complete test suite with:
 
-```bash
+bash
 python manage.py test apps
-```
+
 
 Individual app tests can be run separately:
 
-```bash
+bash
 python manage.py test apps.accounts
 python manage.py test apps.scholarships
 python manage.py test apps.recommendations
@@ -483,16 +483,16 @@ python manage.py test apps.applications
 python manage.py test apps.ai_advisor
 python manage.py test apps.audit
 python manage.py test apps.dashboard
-```
+
 
 The project has also been checked with:
 
-```bash
+bash
 python manage.py check
 python manage.py makemigrations --check --dry-run
-```
 
-The recorded test run completed successfully with **302 tests passing** after the AI integration was added.
+
+The recorded test run completed successfully with *302 tests passing* after the AI integration was added.
 
 The application has been tested using the SQLite development configuration. The production SQL Server environment should still be tested separately before being used as the final production database.
 
@@ -500,7 +500,7 @@ The application has been tested using the SQLite development configuration. The 
 
 ## 12. Project Structure
 
-```text
+text
 ssrams/
 ├── manage.py
 ├── requirements.txt
@@ -534,7 +534,7 @@ ssrams/
 ├── static/
 ├── media/
 └── dev_fallback.sqlite3
-```
+
 
 ---
 
@@ -544,25 +544,25 @@ The project can be deployed as a Django web service using Gunicorn.
 
 ### Build Command
 
-```bash
+bash
 pip install -r requirements.txt && python manage.py migrate
-```
+
 
 ### Start Command
 
-```bash
+bash
 gunicorn --timeout 120 config.wsgi:application
-```
+
 
 For a Render deployment using the current SQLite configuration, the required environment variables include:
 
-```env
-DJANGO_SECRET_KEY=<your-secret-key>
+env
+DJANGO_SECRET_KEY=hidden
 DJANGO_DEBUG=False
-DJANGO_ALLOWED_HOSTS=<your-render-domain>
+DJANGO_ALLOWED_HOSTS=hidden
 DJANGO_TIME_ZONE=Asia/Dhaka
 DB_ENGINE=sqlite_dev_fallback
-```
+
 
 For a long-term production deployment, use a persistent database such as PostgreSQL or a properly hosted SQL Server instance rather than relying on the service filesystem for SQLite data.
 
@@ -572,17 +572,17 @@ For a long-term production deployment, use a persistent database such as Postgre
 
 When changing Django models, create and apply migrations as needed:
 
-```bash
+bash
 python manage.py makemigrations
 python manage.py migrate
-```
+
 
 Before committing changes, it is useful to run:
 
-```bash
+bash
 python manage.py check
 python manage.py test apps
-```
+
 
 Keep feature logic inside the appropriate app and service layer. Avoid placing database queries or complex business rules directly in templates.
 
@@ -590,16 +590,14 @@ Keep feature logic inside the appropriate app and service layer. Avoid placing d
 
 ## 15. License
 
-This project was developed as an academic software project. Add the appropriate license information here if the project is later released under an open-source or other formal license.
+This project was developed as an academic software project.
 
 ---
 
 ## 16. Contributors
 
-Add project members and their roles here.
 
-```text
+text
 1.Name — Sumaiya707 
 2.Name — Mahedi-31 
 3.Name — rabeya27
-```
